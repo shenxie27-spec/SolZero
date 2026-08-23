@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="c4" x1="404" y1="190" x2="716" y2="770" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#EAF9F6"/><stop offset="1" stop-color="#5FD8C8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1024" height="1024" rx="228" fill="#0D1417"/>
+  <g transform="rotate(32 560 560)" stroke="url(#c4)" stroke-width="26" stroke-linecap="round" fill="none">
+    <line x1="560" y1="190" x2="560" y2="440"/>
+    <line x1="404" y1="476" x2="716" y2="476"/>
+    <line x1="428" y1="556" x2="428" y2="746"/>
+    <line x1="478" y1="564" x2="478" y2="762"/>
+    <line x1="528" y1="570" x2="528" y2="770"/>
+    <line x1="578" y1="564" x2="578" y2="762"/>
+    <line x1="628" y1="556" x2="628" y2="746"/>
+  </g>
+  <g transform="rotate(-12 780 660)">
+    <rect x="740" y="610" width="120" height="20" rx="10" fill="#B6E7E2"/>
+    <rect x="740" y="646" width="120" height="20" rx="10" fill="#131D1F" stroke="#B6E7E2" stroke-width="4"/>
+    <rect x="740" y="682" width="120" height="20" rx="10" fill="#5FD8C8"/>
+  </g>
+</svg>

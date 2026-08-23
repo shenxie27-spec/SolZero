@@ -1,0 +1,25 @@
+services:
+  server:
+    build: .
+    restart: unless-stopped
+    environment:
+      - JWT_SECRET=${JWT_SECRET:?set JWT_SECRET in .env}
+      - SOLZERO_CLUSTER=mainnet-beta
+      - SOLZERO_MAINNET_RPC=${SOLZERO_MAINNET_RPC:-https://api.mainnet-beta.helius-rpc.com}
+      - SOLZERO_PROXY_UPSTREAM=${SOLZERO_PROXY_UPSTREAM:-https://api.mainnet-beta.helius-rpc.com}
+      - SOLZERO_TREASURY=${SOLZERO_TREASURY:-B5FhC46zHEcurfhy7mn88jyq7GvTS73qpZ2R9aUVcKJe}
+    volumes:
+      - ./data:/app/server/data
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:

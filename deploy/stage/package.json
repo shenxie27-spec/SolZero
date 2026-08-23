@@ -1,0 +1,14 @@
+{
+  "name": "solzero",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "core",
+    "server"
+  ],
+  "scripts": {
+    "dev:server": "npm --workspace solzero-server run dev",
+    "start:server": "npm --workspace solzero-server run start",
+    "test": "npm --workspace solzero-server run test"
+  }
+}

@@ -1,0 +1,54 @@
+import { Router } from 'express';
+import { db } from '../db.js';
+import { requireAuth, handle, publicUser } from '../middleware.js';
+
+const router = Router();
+
+router.get('/me', requireAuth, handle((req, res) => {
+  const l1 = db.prepare(`
+    SELECT u.id, u.wallet, u.points, u.created_at AS createdAt
+    FROM referrals r JOIN users u ON u.id = r.downline_id
+    WHERE r.referrer_id = ? AND r.level = 1 ORDER BY r.id DESC
+  `).all(req.user.id);
+  const l2 = db.prepare(`
+    SELECT u.id, u.wallet, u.points, u.created_at AS createdAt
+    FROM referrals r JOIN users u ON u.id = r.downline_id
+    WHERE r.referrer_id = ? AND r.level = 2 ORDER BY r.id DESC
+  `).all(req.user.id);
+  const earned = db.prepare(`
+    SELECT COALESCE(SUM(amount), 0) AS total FROM points_ledger
+    WHERE user_id = ? AND kind IN ('referral_l1', 'referral_l2')
+  `).get(req.user.id);
+
+  res.json({
+    user: publicUser(req.user),
+    invites: { l1Count: l1.length, l2Count: l2.length, earned: earned.total, l1, l2 }
+  });
+}));
+
+router.get('/me/points', requireAuth, handle((req, res) => {
+  const offset = Math.max(0, Number(req.query.offset || 0));
+  const rows = db.prepare(`
+    SELECT id, kind, amount, ref_sig AS refSig, note, created_at AS createdAt
+    FROM points_ledger WHERE user_id = ? ORDER BY id DESC LIMIT 50 OFFSET ?
+  `).all(req.user.id, offset);
+  res.json({ rows });
+}));
+
+router.delete('/account', requireAuth, handle((req, res) => {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.prepare('DELETE FROM referrals WHERE referrer_id = ? OR downline_id = ?').run(req.user.id, req.user.id);
+    db.prepare('DELETE FROM claimed_sigs WHERE user_id = ?').run(req.user.id);
+    db.prepare('DELETE FROM points_ledger WHERE user_id = ?').run(req.user.id);
+    db.prepare('DELETE FROM auth_nonces WHERE wallet = ?').run(req.user.wallet);
+    db.prepare('DELETE FROM users WHERE id = ?').run(req.user.id);
+    db.exec('COMMIT');
+  } catch (err) {
+    db.exec('ROLLBACK');
+    throw err;
+  }
+  res.json({ ok: true });
+}));
+
+export default router;
