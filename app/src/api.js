@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from './config';
 
 const TOKEN_KEY = 'solzero.token';
+const WALLET_KEY = 'solzero.wallet';
 
 export async function getStoredToken() {
   try {
@@ -17,6 +18,22 @@ export async function storeToken(token) {
 
 export async function clearStoredToken() {
   await AsyncStorage.removeItem(TOKEN_KEY);
+}
+
+export async function getStoredWallet() {
+  try {
+    return await AsyncStorage.getItem(WALLET_KEY);
+  } catch (err) {
+    return null;
+  }
+}
+
+export async function storeWallet(wallet) {
+  if (wallet) await AsyncStorage.setItem(WALLET_KEY, wallet);
+}
+
+export async function clearStoredWallet() {
+  await AsyncStorage.removeItem(WALLET_KEY);
 }
 
 export async function api(path, opts = {}) {

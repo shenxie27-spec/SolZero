@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import i18n from '../i18n';
-import { api, storeToken } from '../api';
+import { api, storeToken, storeWallet } from '../api';
 
 function withTimeout(promise, ms, message) {
   return Promise.race([
@@ -73,6 +73,7 @@ export default function LoginScreen({ onAuthed, onSkip }) {
         body: { wallet, nonce: challenge.nonce, signature, inviteCode: inviteCode.trim().toUpperCase() || undefined }
       });
       await storeToken(auth.token);
+      await storeWallet(wallet);
       onAuthed(auth.token);
     } catch (err) {
       const msg = (err && err.message) || '';

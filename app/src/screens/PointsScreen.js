@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { fmtPointsNum } from '../format';
 import Card from '../components/Card';
 import Header from '../components/Header';
 import { colors } from '../theme';
@@ -51,7 +52,7 @@ export default function PointsScreen() {
 
       <Card style={styles.balanceCard}>
         <Text style={styles.balanceLabel}>{t('points.balance')}</Text>
-        <Text style={styles.balanceValue}>{me ? me.user.points : '—'}</Text>
+        <Text style={styles.balanceValue}>{me ? fmtPointsNum(me.user.points) : '—'}</Text>
         <Text style={styles.welfare}>{t('points.moreWelfare')}</Text>
         <Text style={styles.welfareHint}>{t('points.welfareHint')}</Text>
       </Card>

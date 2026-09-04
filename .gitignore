@@ -31,3 +31,13 @@ core/repro.mjs
 __pycache__/
 app/.git_bak/
 
+# 敏感内容（不发布：服务器部署脚本、内部文档、密钥）
+deploy/
+docs/
+*.db-wal
+*.db-shm
+
+# 临时调试文件
+.javatest/
+core/tmp-verify.mjs
+

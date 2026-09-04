@@ -35,6 +35,26 @@ router.get('/me/points', requireAuth, handle((req, res) => {
   res.json({ rows });
 }));
 
+router.get('/me/blocked', requireAuth, handle((req, res) => {
+  const rows = db.prepare('SELECT mint FROM blocked_mints WHERE user_id = ? ORDER BY created_at DESC').all(req.user.id);
+  res.json({ mints: rows.map((r) => r.mint) });
+}));
+
+router.post('/blocked', requireAuth, handle((req, res) => {
+  const mint = String(req.body.mint || '').trim();
+  if (!/^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(mint)) {
+    return res.status(400).json({ error: 'bad mint' });
+  }
+  db.prepare('INSERT OR IGNORE INTO blocked_mints (user_id, mint) VALUES (?, ?)').run(req.user.id, mint);
+  res.json({ ok: true });
+}));
+
+router.delete('/blocked/:mint', requireAuth, handle((req, res) => {
+  const mint = String(req.params.mint || '').trim();
+  db.prepare('DELETE FROM blocked_mints WHERE user_id = ? AND mint = ?').run(req.user.id, mint);
+  res.json({ ok: true });
+}));
+
 router.delete('/account', requireAuth, handle((req, res) => {
   db.exec('BEGIN IMMEDIATE');
   try {

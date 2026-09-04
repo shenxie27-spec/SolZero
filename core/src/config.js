@@ -13,6 +13,8 @@ export const FEE_RATE = 0.1;
 export const POINTS_PER_USD = 10;
 export const CLOSES_PER_TX = 8;
 export const COMPUTE_UNIT_LIMIT = 300000;
+export const CNF_BURN_FEE_LAMPORTS = 5000;
+export const CNF_BURN_POINTS = 0.1;
 
 export const CLUSTERS = {
   localnet: 'http://127.0.0.1:8899',

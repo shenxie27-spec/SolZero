@@ -1,4 +1,4 @@
-import { getConnection, parseCheckinMemo, CHECKIN_PREFIX } from 'solzero-core';
+import { getConnection, parseCheckinMemo, CHECKIN_PREFIX, fetchConfirmedTx } from 'solzero-core';
 import { db } from '../db.js';
 import { config } from '../config.js';
 import { computeStreak, ladderPoints, utcDateString } from './points.js';
@@ -7,11 +7,11 @@ export async function verifyCheckinTx(signature, wallet, today) {
   const connection = getConnection(config.cluster);
   let tx;
   try {
-    tx = await connection.getTransaction(signature, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
+    tx = await fetchConfirmedTx(connection, signature);
   } catch (err) {
     throw Object.assign(new Error('无法读取链上交易，请稍后重试'), { status: 502 });
   }
-  if (!tx) throw Object.assign(new Error('交易未找到，请确认已发送'), { status: 404 });
+  if (!tx) throw Object.assign(new Error('交易未确认，请稍后重试'), { status: 404 });
   if (tx.meta && tx.meta.err) throw Object.assign(new Error('该交易在链上执行失败'), { status: 422 });
 
   const memos = parseCheckinMemo(tx);

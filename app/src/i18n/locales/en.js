@@ -5,7 +5,7 @@ export default {
   common: {
     loading: 'Loading…', retry: 'Retry', confirm: 'Confirm', cancel: 'Cancel', back: 'Back', ok: 'OK',
     copy: 'Copy', copied: 'Copied', share: 'Share', logout: 'Log out', close: 'Close',
-    points: 'Points', gasNote: 'A small on-chain fee is required'
+    points: 'Points', gasNote: 'A small on-chain fee is required', done: 'Done', todo: 'Pending'
   },
   login: {
     title: 'Welcome to SolZero',
@@ -33,7 +33,42 @@ export default {
     needWallet: 'Connect your wallet first',
     nothing: 'Wallet is clean', nothingDesc: 'No empty accounts or dust tokens found',
     perAccount: '≈ {{sol}} SOL / account', unknownValue: 'Value unknown',
-    confirmTitle: 'Confirm cleanup', confirmDesc: '{{count}} accounts will be closed, {{burn}} dust tokens will be burned. Burning is irreversible.'
+    unknownToken: 'Unknown token', mintLabel: 'Token mint',
+    burnAmount: 'Burn {{amount}} {{symbol}}',
+    confirmCloseCount: 'Close {{count}} accounts',
+    confirmBurnTitle: 'Tokens to burn', confirmFeeTo: 'Service fee recipient',
+    confirmSign: 'Confirm & sign',
+    simFailed: 'Transaction simulation failed, signing cancelled: {{detail}}',
+    skippedTitle: 'Skipped (value unknown)',
+    skippedDesc: 'These tokens have a balance, but no market price could be fetched. If you are sure they are junk, you can manually select them for burning (off by default); the account is then closed to reclaim rent.',
+    skippedTag: 'Has balance',
+    skippedManual: 'Unknown value · manual burn',
+    burnUnknownTag: 'Unknown value',
+    leftTitle: 'Token accounts',
+    leftDesc: 'Empty and dust accounts are selected by default. Tokens with a balance that cannot be priced are hidden automatically to protect value.',
+    rightTitle: 'Compressed NFTs',
+    tabTokens: 'Token accounts', tabCnf: 'Compressed NFTs',
+    noEmpty: 'No empty or dust accounts found',
+    lastUsed: 'Last used {{date}}', neverUsed: 'Never used',
+    hiddenNote: '{{count}} tokens with a balance could not be priced and are hidden automatically to protect value',
+    blockedNote: '{{count}} token(s) blocked', block: 'Hide',
+    noCnf: 'No compressed NFTs found',
+    cnfFee: 'NFT burn fee (symbolic gas)',
+    cnfFeeHint: '{{fee}} SOL symbolic fee per NFT, +{{points}} points each',
+    cnfTitle: 'NFT assets (ads/airdrops)',
+    cnfDesc: 'Compressed NFTs (mostly ad or airdrop NFTs) without a rent account. You may manually tick junk ones to burn. Each costs a {{fee}} SOL symbolic fee and earns +{{points}} points.',
+    cnfBurnTag: 'Compressed NFT', cnfBurnTitle: 'NFTs to burn',
+    cnfNoReward: 'Burning NFTs reclaims no rent and earns no points',
+    cnfProofFailed: 'Failed to fetch burn info: {{name}}', cnfDone: 'NFTs burned',
+    confirmTitle: 'Confirm cleanup', confirmDesc: '{{burn}} dust tokens will be burned. Burning is irreversible.'
+  },
+  task: {
+    title: 'Daily Cleanup Task',
+    desc: 'Complete one wallet cleanup today to claim 100 points.',
+    step1: 'Complete one cleanup', step2: 'Claim 100 points',
+    claim: 'Complete task & claim points', claimed: 'Claimed today',
+    awarded: 'You earned {{points}} points',
+    gasNote: 'Claiming requires an on-chain transaction with a small SOL fee'
   },
   checkin: {
     title: 'Daily Check-in', desc: 'On-chain check-in. The longer your streak, the more points per day',
@@ -64,6 +99,8 @@ export default {
     title: 'Profile', wallet: 'Wallet', joined: 'Joined',
     language: 'Language', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
     privacy: 'Privacy Policy', terms: 'Terms of Service',
+    blockedTitle: 'Blocked tokens', blockedEmpty: 'No blocked tokens yet', unblock: 'Unblock',
+    feedbackTitle: 'Feedback email', feedbackDesc: 'For product feedback or issues, email us at:',
     deleteAccount: 'Delete account', deleteConfirm: 'This deletes all your data permanently. Continue?',
     deleted: 'Account deleted', version: 'Version'
   }

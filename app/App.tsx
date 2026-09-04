@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, StatusBar, ActivityIndicator, StyleSheet, Text } from 'react-native';
 import { MobileWalletProvider } from '@wallet-ui/react-native-web3js';
+import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import i18n from './src/i18n';
 import { API_URL, CHAIN, APP_NAME } from './src/config';
-import { getStoredToken, clearStoredToken } from './src/api';
+import { getStoredToken, clearStoredToken, getStoredWallet, clearStoredWallet, storeWallet, api } from './src/api';
 import { useTranslation } from 'react-i18next';
 import { colors } from './src/theme';
 import LoginScreen from './src/screens/LoginScreen';
@@ -43,6 +44,7 @@ function MainShell({ onLogout, guest }) {
 }
 
 function Root() {
+  const { account } = useMobileWallet();
   const [token, setToken] = useState<string | null>(null);
   const [guest, setGuest] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -61,8 +63,31 @@ function Root() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!token) return;
+    (async () => {
+      try {
+        let storedWallet = await getStoredWallet();
+        if (!storedWallet) {
+          const me = await api('/me');
+          storedWallet = (me && me.user && me.user.wallet) || null;
+          if (storedWallet) await storeWallet(storedWallet);
+        }
+        const addr = account ? account.address : null;
+        if (storedWallet && addr && addr !== storedWallet) {
+          await clearStoredToken();
+          await clearStoredWallet();
+          setToken(null);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+  }, [account, token]);
+
   function handleLogout() {
     clearStoredToken();
+    clearStoredWallet();
     setToken(null);
     setGuest(false);
   }

@@ -5,7 +5,7 @@ export default {
   common: {
     loading: '불러오는 중…', retry: '재시도', confirm: '확인', cancel: '취소', back: '뒤로', ok: '확인',
     copy: '복사', copied: '복사됨', share: '공유', logout: '로그아웃', close: '닫기',
-    points: '포인트', gasNote: '소액의 체인 수수료가 필요합니다'
+    points: '포인트', gasNote: '소액의 체인 수수료가 필요합니다', done: '완료', todo: '미완료'
   },
   login: {
     title: 'SolZero에 오신 것을 환영합니다',
@@ -33,7 +33,42 @@ export default {
     needWallet: '먼저 지갑을 연결하세요',
     nothing: '지갑이 깨끗해요', nothingDesc: '정리할 빈 계정이나 먼지 토큰이 없습니다',
     perAccount: '계정당 약 {{sol}} SOL', unknownValue: '가치 알 수 없음',
-    confirmTitle: '정리 확인', confirmDesc: '{{count}}개 계정을 닫고 {{burn}}개 먼지 토큰을 소각합니다. 소각은 되돌릴 수 없어요.'
+    unknownToken: '알 수 없는 토큰', mintLabel: '토큰 민트',
+    burnAmount: '{{amount}} {{symbol}} 소각',
+    confirmCloseCount: '계정 {{count}}개 닫기',
+    confirmBurnTitle: '소각할 토큰', confirmFeeTo: '서비스 수수료 수령 주소',
+    confirmSign: '확인 및 서명',
+    simFailed: '트랜잭션 시뮬레이션 실패로 서명을 취소했습니다: {{detail}}',
+    skippedTitle: '제외됨 (가치 미확인)',
+    skippedDesc: '잔액은 있지만 시세를 확인할 수 없는 토큰입니다. 스팸으로 판단되는 경우에만 수동으로 선택해 소각할 수 있으며(기본 선택 안 됨), 소각 후 계정을 닫아 렌트를 회수합니다.',
+    skippedTag: '잔액 있음',
+    skippedManual: '가치 미상 · 수동 소각',
+    burnUnknownTag: '가치 미상',
+    leftTitle: '토큰 계정',
+    leftDesc: '빈 계정/더스트 토큰은 기본 선택됩니다. 가격을 확인할 수 없는 잔액 보유 토큰은 자동으로 숨겨집니다.',
+    rightTitle: '압축 NFT',
+    tabTokens: '토큰 계정', tabCnf: '압축 NFT',
+    noEmpty: '빈 계정이나 더스트 토큰을 찾지 못했습니다',
+    lastUsed: '마지막 사용 {{date}}', neverUsed: '사용한 적 없음',
+    hiddenNote: '가격을 확인할 수 없는 잔액 보유 토큰 {{count}}개는 자산 보호를 위해 자동으로 숨겨집니다',
+    blockedNote: '토큰 {{count}}개 차단됨', block: '숨기기',
+    noCnf: '압축 NFT를 찾지 못했습니다',
+    cnfFee: 'NFT 소각 수수료(상징적 가스비)',
+    cnfFeeHint: 'NFT 1개당 {{fee}} SOL 상징 수수료, +{{points}} 포인트',
+    cnfTitle: 'NFT 자산 (광고/에어드랍)',
+    cnfDesc: '광고나 에어드랍성 압축 NFT입니다. 수동으로 선택해 소각할 수 있으며, 1개당 {{fee}} SOL의 상징 수수료가 부과되고 +{{points}} 포인트가 적립됩니다.',
+    cnfBurnTag: '압축 NFT', cnfBurnTitle: '소각할 NFT',
+    cnfNoReward: 'NFT 소각은 렌트 회수와 포인트 적립이 없습니다',
+    cnfProofFailed: '소각 정보를 가져오지 못했습니다: {{name}}', cnfDone: 'NFT 소각 완료',
+    confirmTitle: '정리 확인', confirmDesc: '{{burn}}개 먼지 토큰을 소각합니다. 소각은 되돌릴 수 없어요.'
+  },
+  task: {
+    title: '일일 정리 미션',
+    desc: '오늘 지갑 정리를 1회 완료하면 100 포인트를 받을 수 있습니다.',
+    step1: '정리 1회 완료', step2: '100 포인트 받기',
+    claim: '미션 완료 및 포인트 받기', claimed: '오늘 수령 완료',
+    awarded: '{{points}} 포인트 획득',
+    gasNote: '수령에는 소액의 SOL 수수료가 드는 온체인 트랜잭션이 필요합니다'
   },
   checkin: {
     title: '매일 출석', desc: '온체인 출석. 연속일수가 길수록 하루 포인트가 늘어나요',
@@ -64,6 +99,8 @@ export default {
     title: '내 정보', wallet: '지갑 주소', joined: '가입일',
     language: '언어', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
     privacy: '개인정보 처리방침', terms: '이용약관',
+    blockedTitle: '차단한 토큰', blockedEmpty: '차단한 토큰이 없습니다', unblock: '차단 해제',
+    feedbackTitle: '피드백 이메일', feedbackDesc: '제품 제안이나 문제 신고는 아래 메일로 보내주세요:',
     deleteAccount: '계정 삭제', deleteConfirm: '모든 데이터가 영구 삭제됩니다. 계속할까요?',
     deleted: '계정이 삭제되었습니다', version: '버전'
   }

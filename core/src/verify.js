@@ -1,10 +1,31 @@
 import { PublicKey } from '@solana/web3.js';
-import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, SYSTEM_PROGRAM_ID, TREASURY, FEE_RATE } from './config.js';
+import { TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID, SYSTEM_PROGRAM_ID, TREASURY, FEE_RATE, CNF_BURN_FEE_LAMPORTS } from './config.js';
+import { BUBBLEGUM_PROGRAM_ID, BUBBLEGUM_BURN_DISCRIMINATOR } from './nft.js';
 
 const CLOSE_DISCRIMINATOR = 9;
 const BURN_DISCRIMINATOR = 8;
 const REVOKE_DISCRIMINATOR = 5;
 const TRANSFER_DISCRIMINATOR = 2;
+
+export async function fetchConfirmedTx(connection, signature, opts = {}) {
+  const retries = typeof opts.retries === 'number' ? opts.retries : 12;
+  const intervalMs = typeof opts.intervalMs === 'number' ? opts.intervalMs : 3000;
+  let lastErr = null;
+  for (let i = 0; i < retries; i += 1) {
+    try {
+      const tx = await connection.getTransaction(signature, {
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0
+      });
+      if (tx) return tx;
+    } catch (err) {
+      lastErr = err;
+    }
+    if (i < retries - 1) await new Promise((resolve) => setTimeout(resolve, intervalMs));
+  }
+  if (lastErr) throw lastErr;
+  return null;
+}
 
 export async function verifyCleanupSignatures(connection, signatures, opts = {}) {
   const feeWallet = opts.feeWallet ? new PublicKey(opts.feeWallet) : TREASURY;
@@ -14,7 +35,7 @@ export async function verifyCleanupSignatures(connection, signatures, opts = {})
   for (const sig of signatures) {
     let tx = null;
     try {
-      tx = await connection.getTransaction(sig, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
+      tx = await fetchConfirmedTx(connection, sig, opts.fetch);
     } catch (err) {
       results.push({ sig, ok: false, error: `fetch failed: ${err.message}` });
       continue;
@@ -32,6 +53,17 @@ export async function verifyCleanupSignatures(connection, signatures, opts = {})
     const message = tx.transaction.message;
     const accountKeys = message.getAccountKeys ? message.getAccountKeys() : message.accountKeys;
     const instructions = message.compiledInstructions || message.instructions || [];
+
+    let feePayer = null;
+    try {
+      feePayer = accountKeys.get ? accountKeys.get(0).toBase58() : accountKeys[0].toBase58();
+    } catch (err) {
+      feePayer = null;
+    }
+    if (opts.expectPayer && feePayer !== opts.expectPayer) {
+      results.push({ sig, ok: false, error: 'transaction was not signed by the connected wallet' });
+      continue;
+    }
 
     let recoveredLamports = 0;
     let feeLamports = 0;
@@ -89,6 +121,93 @@ export async function verifyCleanupSignatures(connection, signatures, opts = {})
       burnedCount,
       revokedCount,
       error: ok ? null : (recoveredLamports === 0 ? 'no closable accounts found in tx' : `fee mismatch: paid ${feeLamports}, expected >= ${expectedFee}`)
+    });
+  }
+
+  return results;
+}
+
+export async function verifyCnfBurnSignatures(connection, signatures, opts = {}) {
+  const feeWallet = opts.feeWallet ? new PublicKey(opts.feeWallet) : TREASURY;
+  const feePerBurn = typeof opts.feePerBurn === 'number' ? opts.feePerBurn : CNF_BURN_FEE_LAMPORTS;
+  const results = [];
+
+  for (const sig of signatures) {
+    let tx = null;
+    try {
+      tx = await fetchConfirmedTx(connection, sig, opts.fetch);
+    } catch (err) {
+      results.push({ sig, ok: false, error: `fetch failed: ${err.message}` });
+      continue;
+    }
+
+    if (!tx) {
+      results.push({ sig, ok: false, error: 'not found' });
+      continue;
+    }
+    if (tx.meta && tx.meta.err) {
+      results.push({ sig, ok: false, error: 'transaction failed on-chain' });
+      continue;
+    }
+
+    const message = tx.transaction.message;
+    const accountKeys = message.getAccountKeys ? message.getAccountKeys() : message.accountKeys;
+    const instructions = message.compiledInstructions || message.instructions || [];
+
+    let feePayer = null;
+    try {
+      feePayer = accountKeys.get ? accountKeys.get(0).toBase58() : accountKeys[0].toBase58();
+    } catch (err) {
+      feePayer = null;
+    }
+    if (opts.expectPayer && feePayer !== opts.expectPayer) {
+      results.push({ sig, ok: false, error: 'transaction was not signed by the connected wallet' });
+      continue;
+    }
+
+    let burns = 0;
+    let feeLamports = 0;
+
+    for (const ix of instructions) {
+      let programId;
+      try {
+        programId = accountKeys.get(ix.programIdIndex);
+      } catch (err) {
+        programId = accountKeys[ix.programIdIndex];
+      }
+      if (!programId) continue;
+
+      const data = ix.data;
+      if (!data || data.length === 0) continue;
+
+      if (programId.equals(BUBBLEGUM_PROGRAM_ID)) {
+        if (data.length >= 8 && BUBBLEGUM_BURN_DISCRIMINATOR.every((b, i) => data[i] === b)) {
+          burns += 1;
+        }
+      } else if (programId.equals(SYSTEM_PROGRAM_ID) && data[0] === 2) {
+        const destIdx = ix.accountKeyIndexes ? ix.accountKeyIndexes[1] : ix.accounts[1];
+        let dest;
+        try {
+          dest = accountKeys.get(destIdx);
+        } catch (err) {
+          dest = accountKeys[destIdx];
+        }
+        if (dest && dest.equals(feeWallet)) {
+          const buf = Buffer.from(data);
+          feeLamports += Number(buf.readBigUInt64LE(4));
+        }
+      }
+    }
+
+    const expectedFee = burns * feePerBurn;
+    const ok = burns > 0 && feeLamports >= expectedFee;
+    results.push({
+      sig,
+      ok,
+      burns,
+      feeLamports,
+      expectedFee,
+      error: ok ? null : (burns === 0 ? 'no bubblegum burn instructions found in tx' : `fee mismatch: paid ${feeLamports}, expected >= ${expectedFee}`)
     });
   }
 

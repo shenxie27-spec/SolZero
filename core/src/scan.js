@@ -50,28 +50,40 @@ export async function classifyAccounts(connection, owner, opts = {}) {
   }
 
   const decimalsCache = new Map();
-  async function decimalsOf(mint) {
-    if (decimalsCache.has(mint)) return decimalsCache.get(mint);
+  async function decimalsOf(mint, program) {
+    const cacheKey = `${program}:${mint}`;
+    if (decimalsCache.has(cacheKey)) return decimalsCache.get(cacheKey);
     let d = 0;
     try {
-      const info = await getMint(connection, new PublicKey(mint), 'confirmed');
+      const programId = program === 'token2022' ? TOKEN_2022_PROGRAM_ID : TOKEN_PROGRAM_ID;
+      const info = await getMint(connection, new PublicKey(mint), 'confirmed', programId);
       d = info.decimals;
     } catch (err) {
       d = 0;
     }
-    decimalsCache.set(mint, d);
+    decimalsCache.set(cacheKey, d);
     return d;
   }
 
   const empty = [];
   const dust = [];
+  const unknown = [];
   let emptyLamports = 0;
   let dustLamports = 0;
 
   for (const row of rows) {
+    const base = {
+      pubkey: row.pubkey,
+      mint: row.mint,
+      program: row.program,
+      amount: row.amount.toString(),
+      lamports: row.lamports,
+      delegateOption: row.delegateOption,
+      state: row.state
+    };
     if (row.amount === 0n) {
       const item = {
-        ...row,
+        ...base,
         amountUi: '0',
         usdValue: 0,
         needsRevoke: row.delegateOption === 1,
@@ -81,13 +93,13 @@ export async function classifyAccounts(connection, owner, opts = {}) {
       empty.push(item);
       emptyLamports += row.lamports;
     } else {
-      const decimals = await decimalsOf(row.mint);
+      const decimals = await decimalsOf(row.mint, row.program);
       const amountUi = Number(row.amount) / Math.pow(10, decimals);
       const price = prices[row.mint];
       const usdValue = typeof price === 'number' ? amountUi * price : 0;
-      if (usdValue < dustThreshold) {
+      if (typeof price === 'number' && usdValue < dustThreshold) {
         const item = {
-          ...row,
+          ...base,
           decimals,
           amountUi,
           usdValue: typeof price === 'number' ? usdValue : null,
@@ -98,6 +110,17 @@ export async function classifyAccounts(connection, owner, opts = {}) {
         };
         dust.push(item);
         dustLamports += row.lamports;
+      } else if (typeof price !== 'number') {
+        unknown.push({
+          ...base,
+          decimals,
+          amountUi,
+          usdValue: null,
+          hasPrice: false,
+          needsRevoke: row.delegateOption === 1,
+          reason: 'unknown-value',
+          kind: 'unknown'
+        });
       }
     }
   }
@@ -105,9 +128,11 @@ export async function classifyAccounts(connection, owner, opts = {}) {
   return {
     empty,
     dust,
+    unknown,
     totals: {
       emptyCount: empty.length,
       dustCount: dust.length,
+      unknownCount: unknown.length,
       emptyLamports,
       dustLamports,
       totalLamports: emptyLamports + dustLamports,

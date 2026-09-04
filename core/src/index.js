@@ -6,4 +6,5 @@ export * from './scan.js';
 export * from './cleanup.js';
 export * from './verify.js';
 export * from './checkin.js';
+export * from './nft.js';
 export * from './testutil.js';

@@ -5,6 +5,7 @@ import { handle } from './middleware.js';
 import authRoutes from './routes/auth.js';
 import meRoutes from './routes/me.js';
 import checkinRoutes from './routes/checkin.js';
+import taskRoutes from './routes/task.js';
 import cleanupRoutes from './routes/cleanup.js';
 import leaderboardRoutes from './routes/leaderboard.js';
 import priceRoutes from './routes/price.js';
@@ -30,6 +31,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api', meRoutes);
 app.use('/api', checkinRoutes);
+app.use('/api', taskRoutes);
 app.use('/api', cleanupRoutes);
 app.use('/api', leaderboardRoutes);
 app.use('/api', priceRoutes);

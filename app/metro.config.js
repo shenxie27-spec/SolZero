@@ -11,7 +11,10 @@ const config = {
       path.resolve(__dirname, 'node_modules'),
       path.resolve(root, 'core', 'node_modules'),
       path.resolve(root, 'node_modules')
-    ]
+    ],
+    extraNodeModules: {
+      assert: path.resolve(__dirname, 'node_modules', 'assert')
+    }
   }
 };
 

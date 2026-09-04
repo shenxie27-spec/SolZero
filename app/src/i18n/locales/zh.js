@@ -5,7 +5,7 @@ export default {
   common: {
     loading: '加载中…', retry: '重试', confirm: '确认', cancel: '取消', back: '返回', ok: '好的',
     copy: '复制', copied: '已复制', share: '分享', logout: '退出登录', close: '关闭',
-    points: '积分', gasNote: '需要支付少量链上手续费'
+    points: '积分', gasNote: '需要支付少量链上手续费', done: '已完成', todo: '未完成'
   },
   login: {
     title: '欢迎使用 SolZero',
@@ -33,7 +33,42 @@ export default {
     needWallet: '请先连接种子库钱包',
     nothing: '钱包很干净', nothingDesc: '没有发现可清理的空账户或粉尘代币',
     perAccount: '约 {{sol}} SOL / 账户', unknownValue: '价值未知',
-    confirmTitle: '确认清理', confirmDesc: '将关闭 {{count}} 个账户，其中 {{burn}} 个粉尘代币将被燃烧。燃烧后不可恢复，请确认。'
+    unknownToken: '未知代币', mintLabel: '代币地址',
+    burnAmount: '将燃烧 {{amount}} {{symbol}}',
+    confirmCloseCount: '关闭 {{count}} 个账户',
+    confirmBurnTitle: '将燃烧的代币', confirmFeeTo: '服务费收款地址',
+    confirmSign: '确认并签名',
+    simFailed: '交易预检未通过，已取消签名：{{detail}}',
+    skippedTitle: '已跳过（价值无法确认）',
+    skippedDesc: '这些代币有余额，但当前无法获取市场价格。若确认是垃圾代币，可手动勾选销毁（默认不选中），销毁后关闭账户回收租金。',
+    skippedTag: '有余额',
+    skippedManual: '价值未知 · 可手动销毁',
+    burnUnknownTag: '价值未知',
+    leftTitle: '代币账户',
+    leftDesc: '空账户/粉尘代币默认勾选；有余额但无法确认价值的代币会自动隐藏保护。',
+    rightTitle: '压缩 NFT',
+    tabTokens: '代币账户', tabCnf: '压缩 NFT',
+    noEmpty: '没有发现空账户或粉尘代币',
+    lastUsed: '最后使用 {{date}}', neverUsed: '从未使用',
+    hiddenNote: '{{count}} 个有余额代币无法确认价值，已自动隐藏保护',
+    blockedNote: '{{count}} 个代币已屏蔽', block: '屏蔽',
+    noCnf: '没有发现压缩 NFT',
+    cnfFee: 'NFT 销毁费（象征性 gas）',
+    cnfFeeHint: '每个 NFT 收取 {{fee}} SOL 象征性手续费，+{{points}} 积分',
+    cnfTitle: 'NFT 资产（广告/空投）',
+    cnfDesc: '这些是压缩 NFT（多为广告或空投 NFT），不占租金账户。确认是垃圾后可手动勾选销毁；每个收取 {{fee}} SOL 象征性手续费，+{{points}} 积分。',
+    cnfBurnTag: '压缩 NFT', cnfBurnTitle: '将销毁的 NFT',
+    cnfNoReward: '销毁 NFT 不回收租金、不发放积分',
+    cnfProofFailed: 'NFT 销毁信息获取失败：{{name}}', cnfDone: 'NFT 已销毁',
+    confirmTitle: '确认清理', confirmDesc: '其中 {{burn}} 个粉尘代币将被燃烧。燃烧后不可恢复，请确认。'
+  },
+  task: {
+    title: '每日清理任务',
+    desc: '每天完成一次钱包清理，即可领取 100 积分奖励。',
+    step1: '完成一次清理', step2: '领取 100 积分',
+    claim: '完成任务并领取积分', claimed: '今日已领取',
+    awarded: '获得 {{points}} 积分',
+    gasNote: '领取需一笔链上交易，仅消耗少量 SOL 手续费'
   },
   checkin: {
     title: '每日签到', desc: '链上签到，连续天数越多，每天积分越高',
@@ -64,6 +99,8 @@ export default {
     title: '我的', wallet: '钱包地址', joined: '注册时间',
     language: '语言', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
     privacy: '隐私政策', terms: '用户协议',
+    blockedTitle: '已屏蔽代币', blockedEmpty: '还没有屏蔽任何代币', unblock: '移除屏蔽',
+    feedbackTitle: '反馈邮箱', feedbackDesc: '产品建议或问题反馈，请发送邮件到：',
     deleteAccount: '注销账号', deleteConfirm: '注销后将删除你的全部数据且不可恢复，确定继续吗？',
     deleted: '账号已注销', version: '版本'
   }

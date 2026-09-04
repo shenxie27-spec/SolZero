@@ -52,7 +52,20 @@ export function openDb(dbPath = config.dbPath) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(downline_id, level)
     );
+    CREATE TABLE IF NOT EXISTS blocked_mints (
+      user_id INTEGER NOT NULL,
+      mint TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, mint)
+    );
   `);
+  for (const col of ['last_cleanup_date TEXT', 'last_task_date TEXT']) {
+    try {
+      db.exec(`ALTER TABLE users ADD COLUMN ${col}`);
+    } catch (err) {
+      /* column already exists */
+    }
+  }
   return db;
 }
 

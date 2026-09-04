@@ -5,7 +5,7 @@ export default {
   common: {
     loading: '読み込み中…', retry: '再試行', confirm: '確認', cancel: 'キャンセル', back: '戻る', ok: 'OK',
     copy: 'コピー', copied: 'コピーしました', share: '共有', logout: 'ログアウト', close: '閉じる',
-    points: 'ポイント', gasNote: '少額のチェーン手数料が必要です'
+    points: 'ポイント', gasNote: '少額のチェーン手数料が必要です', done: '完了', todo: '未完了'
   },
   login: {
     title: 'SolZero へようこそ',
@@ -33,7 +33,42 @@ export default {
     needWallet: 'まずウォレットを接続してください',
     nothing: 'ウォレットはクリーンです', nothingDesc: '空アカウントやダストトークンは見つかりませんでした',
     perAccount: '1 アカウント約 {{sol}} SOL', unknownValue: '価値不明',
-    confirmTitle: '整理の確認', confirmDesc: '{{count}} 個のアカウントを閉じ、{{burn}} 個のダストトークンをバーンします。バーンは取り消せません。'
+    unknownToken: '不明なトークン', mintLabel: 'トークンMint',
+    burnAmount: '{{amount}} {{symbol}} をバーン',
+    confirmCloseCount: '{{count}} 個のアカウントを閉じる',
+    confirmBurnTitle: 'バーンするトークン', confirmFeeTo: 'サービス手数料の受取先',
+    confirmSign: '確認して署名',
+    simFailed: 'トランザクション検証に失敗したため署名を中止しました：{{detail}}',
+    skippedTitle: 'スキップ（価値不明）',
+    skippedDesc: '残高はあるが市場価格を取得できないトークンです。不要と判断した場合のみ手動で選択して焼却できます（デフォルトでは選択されません）。焼却後はアカウントを閉じて家賃を回収します。',
+    skippedTag: '残高あり',
+    skippedManual: '価値不明・手動で焼却可',
+    burnUnknownTag: '価値不明',
+    leftTitle: 'トークンアカウント',
+    leftDesc: '空アカウント・ダストトークンはデフォルトで選択済み。価格を確認できない残高ありのトークンは自動で非表示になります。',
+    rightTitle: '圧縮NFT',
+    tabTokens: 'トークンアカウント', tabCnf: '圧縮NFT',
+    noEmpty: '空アカウント・ダストトークンは見つかりませんでした',
+    lastUsed: '最終使用 {{date}}', neverUsed: '未使用',
+    hiddenNote: '価格を確認できない残高ありのトークン{{count}}件は、価値を守るため自動で非表示にしています',
+    blockedNote: '{{count}}件のトークンをブロック中', block: 'ブロック',
+    noCnf: '圧縮NFTは見つかりませんでした',
+    cnfFee: 'NFTバーン手数料（象徴的ガス代）',
+    cnfFeeHint: '1NFTにつき{{fee}} SOLの象徴的手数料、+{{points}}ポイント',
+    cnfTitle: 'NFT資産（広告・エアドロップ）',
+    cnfDesc: '広告やエアドロップ由来の圧縮NFTです。手動で選択してバーンできます。1件あたり{{fee}} SOLの象徴的手数料がかかり、+{{points}}ポイントを付与します。',
+    cnfBurnTag: '圧縮NFT', cnfBurnTitle: 'バーンするNFT',
+    cnfNoReward: 'NFTのバーンではレント回収・ポイント付与はありません',
+    cnfProofFailed: 'バーン情報の取得に失敗しました：{{name}}', cnfDone: 'NFTをバーンしました',
+    confirmTitle: '整理の確認', confirmDesc: '{{burn}} 個のダストトークンをバーンします。バーンは取り消せません。'
+  },
+  task: {
+    title: '毎日のクリーンアップタスク',
+    desc: '今日1回ウォレットをクリーンアップすると100ポイントを獲得できます。',
+    step1: 'クリーンアップを1回実行', step2: '100ポイント受取',
+    claim: 'タスク完了・ポイント受取', claimed: '本日受取済み',
+    awarded: '{{points}}ポイント獲得',
+    gasNote: '受取には少額のSOL手数料を要するオンチェーン取引が必要です'
   },
   checkin: {
     title: '毎日チェックイン', desc: 'オンチェーンチェックイン。連続日数が多いほど毎日のポイントが増えます',
@@ -64,6 +99,8 @@ export default {
     title: 'プロフィール', wallet: 'ウォレット', joined: '登録日',
     language: '言語', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
     privacy: 'プライバシーポリシー', terms: '利用規約',
+    blockedTitle: 'ブロックしたトークン', blockedEmpty: 'ブロックしたトークンはありません', unblock: '解除',
+    feedbackTitle: 'フィードバックメール', feedbackDesc: 'ご意見・不具合はこちらのメールまで：',
     deleteAccount: 'アカウント削除', deleteConfirm: 'すべてのデータが完全に削除されます。続行しますか？',
     deleted: 'アカウントを削除しました', version: 'バージョン'
   }
