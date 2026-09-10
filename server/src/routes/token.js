@@ -4,7 +4,9 @@ import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { createHash } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
 import { config } from '../config.js';
+import { handle } from '../middleware.js';
 import { PublicKey } from 'solzero-core';
 
 const router = Router();
@@ -76,6 +78,72 @@ function fetchWithTimeout(url, timeoutMs, init) {
   return fetch(url, { ...init, headers: { ...(init && init.headers), 'user-agent': 'solzero/0.1' }, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
+function isPrivateIp(ip) {
+  const v4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(ip);
+  if (v4) {
+    const b = v4.slice(1).map(Number);
+    if (b.some((x) => x > 255)) return false;
+    if (b[0] === 0 || b[0] === 10 || b[0] === 127) return true;
+    if (b[0] === 100 && b[1] >= 64 && b[1] <= 127) return true;
+    if (b[0] === 169 && b[1] === 254) return true;
+    if (b[0] === 172 && b[1] >= 16 && b[1] <= 31) return true;
+    if (b[0] === 192 && b[1] === 168) return true;
+    if (b[0] >= 224) return true;
+    return false;
+  }
+  const lower = ip.toLowerCase();
+  const hexMapped = /^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/.exec(lower);
+  if (hexMapped) {
+    const g1 = hexMapped[1].padStart(4, '0');
+    const g2 = hexMapped[2].padStart(4, '0');
+    const parts = [g1.slice(0, 2), g1.slice(2), g2.slice(0, 2), g2.slice(2)].map((x) => parseInt(x, 16));
+    return parts[0] === 0 || parts[0] === 10 || parts[0] === 127
+      || (parts[0] === 100 && parts[1] >= 64 && parts[1] <= 127)
+      || (parts[0] === 169 && parts[1] === 254)
+      || (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31)
+      || (parts[0] === 192 && parts[1] === 168)
+      || parts[0] >= 224;
+  }
+  if (lower.startsWith('::ffff:')) {
+    const mapped = lower.slice(7);
+    return /^\d{1,3}(\.\d{1,3}){3}$/.test(mapped) && isPrivateIp(mapped);
+  }
+  if (lower === '::' || lower === '::1' || lower === '0:0:0:0:0:0:0:1') return true;
+  if (lower.startsWith('fe80') || lower.startsWith('fc') || lower.startsWith('fd')) return true;
+  return false;
+}
+
+const BLOCKED_HOST_SUFFIXES = ['.local', '.internal', '.localhost', '.lan', '.home.arpa'];
+
+async function assertSafeHttpUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch (err) {
+    throw new Error('bad url');
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+    throw new Error('bad protocol');
+  }
+  const host = parsed.hostname.toLowerCase().replace(/\.$/, '').replace(/^\[|\]$/g, '');
+  if (BLOCKED_HOST_SUFFIXES.some((s) => host === s.slice(1) || host.endsWith(s))) {
+    throw new Error('blocked host');
+  }
+  if (/^[\d.]+$/.test(host) || host.includes(':')) {
+    if (isPrivateIp(host)) throw new Error('blocked ip');
+    return;
+  }
+  const addrs = await lookup(host, { all: true, verbatim: true });
+  if (!addrs || addrs.length === 0 || addrs.some((a) => isPrivateIp(a.address))) {
+    throw new Error('blocked ip');
+  }
+}
+
+async function safeFetch(url, timeoutMs, init) {
+  await assertSafeHttpUrl(url);
+  return fetchWithTimeout(url, timeoutMs, init);
+}
+
 function toHttpUri(uri) {
   if (!uri) return null;
   let u = String(uri).trim();
@@ -105,7 +173,7 @@ async function metaFromUri(uri) {
   try {
     const httpUri = toHttpUri(uri);
     if (!httpUri) return null;
-    const res = await fetchWithTimeout(httpUri, 9000);
+    const res = await safeFetch(httpUri, 9000);
     if (!res.ok) return null;
     const json = await res.json();
     if (!json || typeof json !== 'object') return null;
@@ -327,7 +395,7 @@ async function extractVideoFrame(animUrl, mint) {
   const inFile = path.join(tmpDir, mint + '.mp4');
   const outFile = path.join(tmpDir, mint + '.jpg');
   try {
-    const res = await fetchWithTimeout(animUrl, 60000);
+    const res = await safeFetch(animUrl, 60000);
     if (!res.ok) return null;
     const data = Buffer.from(await res.arrayBuffer());
     if (data.length === 0 || data.length > 80 * 1024 * 1024) return null;
@@ -348,7 +416,7 @@ async function extractVideoFrame(animUrl, mint) {
   }
 }
 
-router.get('/tokens', async (req, res) => {
+router.get('/tokens', handle(async (req, res) => {
   const mints = String(req.query.mints || '')
     .split(',')
     .map((s) => s.trim())
@@ -363,7 +431,7 @@ router.get('/tokens', async (req, res) => {
     tokens[mint] = { symbol: m.symbol, name: m.name, imageUrl: m.imageUrl, hasIcon: !!(m.imageUrl || m.animationUrl) };
   }
   res.json({ tokens });
-});
+}));
 
 router.get('/token/:mint/icon', async (req, res) => {
   const { mint } = req.params;
@@ -460,7 +528,7 @@ router.get('/img', async (req, res) => {
     /* no cached image yet */
   }
   try {
-    const upstream = await fetchWithTimeout(url, 15000);
+    const upstream = await safeFetch(url, 15000);
     if (!upstream.ok) {
       return res.status(404).json({ error: 'img fetch failed' });
     }

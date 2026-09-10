@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { reportError } from '../errors';
 import { fmtPointsNum } from '../format';
 import Card from '../components/Card';
 import Header from '../components/Header';
@@ -11,6 +12,8 @@ function kindLabel(t, kind) {
   const map = {
     checkin: t('points.kindCheckin'),
     cleanup: t('points.kindCleanup'),
+    cnf_burn: t('points.kindCnfBurn'),
+    task: t('points.kindTask'),
     referral_l1: t('points.kindReferralL1'),
     referral_l2: t('points.kindReferralL2'),
     adjust: t('points.kindAdjust')
@@ -36,6 +39,7 @@ export default function PointsScreen() {
       setHistory(historyData.rows || []);
       setBoard(boardData.rows || []);
     } catch (err) {
+      reportError('points', err);
       setError(err.message);
     }
   }
@@ -69,7 +73,7 @@ export default function PointsScreen() {
                 <Text style={styles.rowTime}>{row.createdAt}</Text>
               </View>
               <Text style={[styles.rowAmount, row.amount >= 0 ? { color: colors.accent } : { color: colors.danger }]}>
-                {row.amount >= 0 ? '+' : ''}{row.amount}
+                {row.amount >= 0 ? '+' : ''}{fmtPointsNum(row.amount)}
               </Text>
             </View>
           ))
@@ -78,11 +82,13 @@ export default function PointsScreen() {
 
       <Text style={styles.sectionTitle}>{t('points.leaderboard')}</Text>
       <Card>
-        {board.slice(0, 10).map((row) => (
+        {board.length === 0 ? (
+          <Text style={styles.empty}>{t('points.noLeaderboard')}</Text>
+        ) : board.slice(0, 10).map((row) => (
           <View key={row.rank} style={styles.row}>
             <Text style={styles.rank}>#{row.rank}</Text>
             <Text style={styles.boardWallet}>{row.wallet}</Text>
-            <Text style={styles.boardPoints}>{row.points}</Text>
+            <Text style={styles.boardPoints}>{fmtPointsNum(row.points)}</Text>
           </View>
         ))}
       </Card>

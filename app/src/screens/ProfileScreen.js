@@ -1,22 +1,24 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Alert, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Clipboard from '@react-native-clipboard/clipboard';
 import i18n from '../i18n';
 import { api, clearStoredToken } from '../api';
+import { reportError } from '../errors';
 import { shortWallet, fmtPointsNum } from '../format';
 import Card from '../components/Card';
 import Header from '../components/Header';
 import Button from '../components/Button';
-import { colors } from '../theme';
-import { APP_NAME } from '../config';
+import { colors, radius } from '../theme';
+import { APP_NAME, APP_VERSION } from '../config';
 
 const LANGS = [
   { key: 'zh', label: 'langZh' },
   { key: 'en', label: 'langEn' },
   { key: 'ja', label: 'langJa' },
-  { key: 'ko', label: 'langKo' }
+  { key: 'ko', label: 'langKo' },
+  { key: 'zhTW', label: 'langZhTW' }
 ];
 
 export default function ProfileScreen({ onLogout }) {
@@ -25,6 +27,9 @@ export default function ProfileScreen({ onLogout }) {
   const [error, setError] = useState(null);
   const [blockedList, setBlockedList] = useState([]);
   const [blockedMeta, setBlockedMeta] = useState({});
+  const [allowlist, setAllowlist] = useState([]);
+  const [mintInput, setMintInput] = useState('');
+  const [adding, setAdding] = useState(false);
   const [copied, setCopied] = useState(false);
 
   async function load() {
@@ -33,6 +38,8 @@ export default function ProfileScreen({ onLogout }) {
       setMe(data);
       const b = await api('/me/blocked');
       setBlockedList(b.mints || []);
+      const c = await api('/me/cleanable');
+      setAllowlist(c.mints || []);
       if (b.mints && b.mints.length > 0) {
         const tok = await api('/tokens?mints=' + encodeURIComponent(b.mints.join(',')), { auth: false });
         setBlockedMeta(tok.tokens || {});
@@ -40,6 +47,7 @@ export default function ProfileScreen({ onLogout }) {
         setBlockedMeta({});
       }
     } catch (err) {
+      reportError('profile', err);
       setError(err.message);
     }
   }
@@ -62,6 +70,33 @@ export default function ProfileScreen({ onLogout }) {
       await api('/blocked/' + mint, { method: 'DELETE' });
       setBlockedList((prev) => prev.filter((m) => m !== mint));
     } catch (err) {
+      setError(err.message);
+    }
+  }
+
+  async function addCleanable() {
+    const mint = mintInput.trim();
+    if (!mint) return;
+    try {
+      setAdding(true);
+      await api('/cleanable', { method: 'POST', body: { mint } });
+      setMintInput('');
+      const r = await api('/me/cleanable');
+      setAllowlist(r.mints || []);
+    } catch (err) {
+      reportError('profile.allowlist', err);
+      setError(err.message);
+    } finally {
+      setAdding(false);
+    }
+  }
+
+  async function removeCleanable(mint) {
+    try {
+      await api('/cleanable/' + mint, { method: 'DELETE' });
+      setAllowlist((prev) => prev.filter((m) => m !== mint));
+    } catch (err) {
+      reportError('profile.allowlist', err);
       setError(err.message);
     }
   }
@@ -135,6 +170,41 @@ export default function ProfileScreen({ onLogout }) {
         ))}
       </Card>
 
+      <Text style={styles.sectionTitle}>{t('profile.allowlistTitle')}</Text>
+      <Card>
+        <Text style={styles.feedbackDesc}>{t('profile.allowlistDesc')}</Text>
+        <View style={styles.allowInputRow}>
+          <TextInput
+            style={styles.allowInput}
+            value={mintInput}
+            onChangeText={setMintInput}
+            placeholder={t('profile.allowlistPlaceholder')}
+            placeholderTextColor={colors.textFaint}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Pressable
+            style={[styles.addBtn, adding && styles.addBtnDisabled]}
+            onPress={addCleanable}
+            disabled={adding}
+          >
+            <Text style={styles.addBtnText}>{adding ? t('common.loading') : t('profile.allowlistAdd')}</Text>
+          </Pressable>
+        </View>
+        {allowlist.length === 0 ? (
+          <Text style={styles.empty}>{t('profile.allowlistEmpty')}</Text>
+        ) : (
+          allowlist.map((mint) => (
+            <View key={mint} style={styles.langRow}>
+              <Text style={styles.allowMint} numberOfLines={1} ellipsizeMode="middle">{mint}</Text>
+              <Pressable style={styles.unblockBtn} onPress={() => removeCleanable(mint)}>
+                <Text style={styles.unblockText}>{t('profile.allowlistRemove')}</Text>
+              </Pressable>
+            </View>
+          ))
+        )}
+      </Card>
+
       <Text style={styles.sectionTitle}>{t('profile.blockedTitle')}</Text>
       <Card>
         {blockedList.length === 0 ? (
@@ -169,7 +239,7 @@ export default function ProfileScreen({ onLogout }) {
       <Button title={t('common.logout')} onPress={confirmLogout} variant="ghost" style={{ marginTop: 20 }} />
       <Button title={t('profile.deleteAccount')} onPress={confirmDelete} variant="danger" style={{ marginTop: 10 }} />
 
-      <Text style={styles.version}>{t('profile.version')} 0.1.0 · {APP_NAME}</Text>
+      <Text style={styles.version}>{t('profile.version')} {APP_VERSION} · {APP_NAME}</Text>
     </ScrollView>
   );
 }
@@ -189,6 +259,31 @@ const styles = StyleSheet.create({
   blockedMint: { color: colors.textFaint, fontSize: 11, marginTop: 2 },
   unblockBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(95,216,200,0.45)' },
   unblockText: { color: colors.accent, fontSize: 12, fontWeight: '700' },
+  allowInputRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
+  allowInput: {
+    flex: 1,
+    backgroundColor: 'rgba(10,16,18,0.55)',
+    borderWidth: 1,
+    borderColor: 'rgba(234,249,246,0.12)',
+    borderRadius: radius,
+    color: colors.text,
+    fontSize: 13,
+    paddingHorizontal: 12,
+    height: 42
+  },
+  addBtn: {
+    paddingHorizontal: 14,
+    height: 42,
+    borderRadius: radius,
+    backgroundColor: 'rgba(95,216,200,0.16)',
+    borderWidth: 1,
+    borderColor: 'rgba(95,216,200,0.55)',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  addBtnDisabled: { opacity: 0.5 },
+  addBtnText: { color: colors.accent, fontSize: 13, fontWeight: '800' },
+  allowMint: { color: colors.textDim, fontSize: 12, flex: 1, marginRight: 8 },
   feedbackDesc: { color: colors.textFaint, fontSize: 12, lineHeight: 17 },
   emailRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
   emailText: { color: colors.accent, fontSize: 14, fontWeight: '700' },

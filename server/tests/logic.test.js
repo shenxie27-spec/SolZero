@@ -8,6 +8,7 @@ process.env.JWT_SECRET = 'test-secret';
 
 const points = await import('../src/services/points.js');
 const auth = await import('../src/auth.js');
+const middleware = await import('../src/middleware.js');
 const { db } = await import('../src/db.js');
 
 test('签到阶梯：1-7 封顶', () => {
@@ -31,6 +32,24 @@ test('清理积分：0.1 美元 = 1 分，向下取整', () => {
   assert.equal(points.cleanupPointsForUsd(1.23), 12);
   assert.equal(points.cleanupPointsForUsd(0), 0);
   assert.equal(points.cleanupPointsForUsd(NaN), 0);
+});
+
+test('对外积分只保留一位小数', () => {
+  const u = middleware.publicUser({
+    wallet: 'A',
+    code: 'B',
+    points: 12.340000000000002,
+    streak: 1,
+    last_checkin_date: null,
+    created_at: '2026-09-05'
+  });
+  assert.equal(u.points, 12.3);
+});
+
+test('错误上报与清理名单数据表已创建', () => {
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all().map((r) => r.name);
+  assert.ok(tables.includes('cleanup_allowlist'));
+  assert.ok(tables.includes('error_reports'));
 });
 
 test('邀请返点：L1 20%、L2 5%，向下取整', () => {

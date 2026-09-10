@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from './config';
+import { reportError } from './errors';
 
 const TOKEN_KEY = 'solzero.token';
 const WALLET_KEY = 'solzero.wallet';
@@ -13,11 +14,21 @@ export async function getStoredToken() {
 }
 
 export async function storeToken(token) {
-  if (token) await AsyncStorage.setItem(TOKEN_KEY, token);
+  if (token) {
+    try {
+      await AsyncStorage.setItem(TOKEN_KEY, String(token));
+    } catch (err) {
+      /* non-fatal */
+    }
+  }
 }
 
 export async function clearStoredToken() {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+  try {
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  } catch (err) {
+    /* non-fatal */
+  }
 }
 
 export async function getStoredWallet() {
@@ -29,11 +40,21 @@ export async function getStoredWallet() {
 }
 
 export async function storeWallet(wallet) {
-  if (wallet) await AsyncStorage.setItem(WALLET_KEY, wallet);
+  if (wallet) {
+    try {
+      await AsyncStorage.setItem(WALLET_KEY, String(wallet));
+    } catch (err) {
+      /* non-fatal */
+    }
+  }
 }
 
 export async function clearStoredWallet() {
-  await AsyncStorage.removeItem(WALLET_KEY);
+  try {
+    await AsyncStorage.removeItem(WALLET_KEY);
+  } catch (err) {
+    /* non-fatal */
+  }
 }
 
 export async function api(path, opts = {}) {
@@ -42,11 +63,17 @@ export async function api(path, opts = {}) {
     const token = await getStoredToken();
     if (token) headers.Authorization = 'Bearer ' + token;
   }
-  const res = await fetch(API_URL + '/api' + path, {
-    method: opts.method || 'GET',
-    headers,
-    body: opts.body ? JSON.stringify(opts.body) : undefined
-  });
+  let res;
+  try {
+    res = await fetch(API_URL + '/api' + path, {
+      method: opts.method || 'GET',
+      headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+  } catch (err) {
+    reportError('api.network', err);
+    throw err;
+  }
   let json = null;
   try {
     json = await res.json();
@@ -57,6 +84,7 @@ export async function api(path, opts = {}) {
     const message = (json && json.error) || 'HTTP ' + res.status;
     const error = new Error(message);
     error.status = res.status;
+    if (res.status >= 500) reportError('api.' + String(path).replace(/^\/+/, '').replace(/\//g, '.'), error);
     throw error;
   }
   return json;

@@ -15,6 +15,7 @@ export default {
     agree: '로그인하면 이용약관과 개인정보 처리방침에 동의하는 것입니다',
     failed: '연결 실패, 다시 시도해 주세요',
     networkError: '지갑은 연결됐지만 로그인 서버에 연결할 수 없습니다. 네트워크를 확인한 뒤 다시 시도해 주세요',
+    rejected: '지갑이 승인 요청을 거부했습니다. 다시 시도해 허용을 눌러주세요',
     walletTimeout: 'Seed Vault을 열 수 없습니다. 먼저 시스템 지갑 앱을 연 후 다시 시도하세요',
     skip: '게스트로 둘러보기',
     guestHint: '게스트 모드: 지갑을 연결해야 정리 기능을 사용할 수 있어요'
@@ -51,7 +52,10 @@ export default {
     noEmpty: '빈 계정이나 더스트 토큰을 찾지 못했습니다',
     lastUsed: '마지막 사용 {{date}}', neverUsed: '사용한 적 없음',
     hiddenNote: '가격을 확인할 수 없는 잔액 보유 토큰 {{count}}개는 자산 보호를 위해 자동으로 숨겨집니다',
+    allowlisted: '허용 목록 토큰',
     blockedNote: '토큰 {{count}}개 차단됨', block: '숨기기',
+    cnfUnsupported: '신규 트리 유형 · 소각 미지원',
+    accountsChanged: '계정 상태가 변경되어 다시 스캔했습니다',
     noCnf: '압축 NFT를 찾지 못했습니다',
     cnfFee: 'NFT 소각 수수료(상징적 가스비)',
     cnfFeeHint: 'NFT 1개당 {{fee}} SOL 상징 수수료, +{{points}} 포인트',
@@ -82,10 +86,11 @@ export default {
   points: {
     title: '내 포인트', balance: '보유 포인트', history: '내역',
     noHistory: '아직 포인트가 없어요. 정리하거나 출석해 보세요',
-    kindCheckin: '매일 출석', kindCleanup: '정리 회수', kindReferralL1: '1차 파트너 보상', kindReferralL2: '2차 파트너 보상', kindAdjust: '조정',
+    kindCheckin: '매일 출석', kindCleanup: '정리 회수', kindCnfBurn: 'NFT 소각', kindTask: '매일 태스크',
+    kindReferralL1: '1차 파트너 보상', kindReferralL2: '2차 파트너 보상', kindAdjust: '조정',
     moreWelfare: '더 많은 멤버 혜택 곧 공개',
     welfareHint: '포인트가 많을수록 앞으로 열리는 멤버 혜택이 많아집니다. 계속 모아보세요!',
-    leaderboard: '포인트 순위', rank: '순위', me: '나'
+    leaderboard: '포인트 순위', noLeaderboard: '아직 순위에 오른 사용자가 없습니다', rank: '순위', me: '나'
   },
   invite: {
     title: '친구 초대', desc: '친구가 내 코드로 가입하면 친구의 정리 포인트에 따라 보너스를 받아요',
@@ -97,9 +102,13 @@ export default {
   },
   profile: {
     title: '내 정보', wallet: '지갑 주소', joined: '가입일',
-    language: '언어', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
+    language: '언어', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어', langZhTW: '繁體中文',
     privacy: '개인정보 처리방침', terms: '이용약관',
     blockedTitle: '차단한 토큰', blockedEmpty: '차단한 토큰이 없습니다', unblock: '차단 해제',
+    allowlistTitle: '기본 정리 목록',
+    allowlistDesc: '토큰 CA를 입력하면 스캔 시 해당 토큰 계정이 기본 선택되어 정리할 수 있습니다(시세가 없는 토큰용).',
+    allowlistPlaceholder: '토큰 CA(민트 주소) 입력',
+    allowlistAdd: '추가', allowlistRemove: '제거', allowlistEmpty: '추가된 토큰이 없습니다',
     feedbackTitle: '피드백 이메일', feedbackDesc: '제품 제안이나 문제 신고는 아래 메일로 보내주세요:',
     deleteAccount: '계정 삭제', deleteConfirm: '모든 데이터가 영구 삭제됩니다. 계속할까요?',
     deleted: '계정이 삭제되었습니다', version: '버전'

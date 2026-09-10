@@ -12,7 +12,11 @@ function maskWallet(wallet) {
 router.get('/leaderboard', handle((req, res) => {
   const rows = db.prepare('SELECT wallet, points FROM users ORDER BY points DESC, id ASC LIMIT 50').all();
   res.json({
-    rows: rows.map((r, i) => ({ rank: i + 1, wallet: maskWallet(r.wallet), points: r.points }))
+    rows: rows.map((r, i) => ({
+      rank: i + 1,
+      wallet: maskWallet(r.wallet),
+      points: Math.round(Number(r.points) * 10) / 10
+    }))
   });
 }));
 

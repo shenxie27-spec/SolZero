@@ -1,5 +1,6 @@
 import bs58 from 'bs58';
-import { classifyAccounts, buildCleanupTransactions, pointsForUsd } from '../../core/src/index.js';
+import { Buffer } from 'buffer';
+import { classifyAccounts, buildCleanupTransactions, pointsForUsd, parseCheckinMemo } from '../../core/src/index.js';
 import { API_URL } from './config';
 import { api } from './api';
 
@@ -115,4 +116,24 @@ export function estimatePoints(totalLamports, solUsd) {
 
 export function encodeSignature(bytes) {
   return bs58.encode(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes));
+}
+
+export async function findRecentMemoSignature(connection, walletAddress, expectedMemo, windowSec = 300) {
+  try {
+    const sigs = await connection.getSignaturesForAddress(walletAddress, { limit: 12 });
+    const cutoff = Date.now() / 1000 - windowSec;
+    for (const s of sigs) {
+      if (!s.blockTime || s.blockTime < cutoff || s.err) continue;
+      const tx = await connection.getTransaction(s.signature, {
+        commitment: 'confirmed',
+        maxSupportedTransactionVersion: 0
+      });
+      if (!tx || (tx.meta && tx.meta.err)) continue;
+      const memos = parseCheckinMemo(tx);
+      if (memos.includes(expectedMemo)) return s.signature;
+    }
+  } catch (err) {
+    /* ignore */
+  }
+  return null;
 }

@@ -42,3 +42,9 @@ node scripts/smoke.js
 cd core
 node scripts/devnet-demo.js
 ```
+
+## 客户端错误收集
+
+- 客户端会自动把登录、清理、签到、任务等环节的错误上报到 `POST /api/errors`，服务端记录 IP、错误信息、堆栈、钱包、平台和版本。
+- 查看错误列表：设置环境变量 `SOLZERO_ADMIN_TOKEN` 后，请求 `GET /api/admin/errors?limit=100`，并带请求头 `Authorization: Bearer <SOLZERO_ADMIN_TOKEN>`。
+- 每个 IP 每分钟最多上报 30 条，防止接口被刷。

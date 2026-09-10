@@ -18,7 +18,7 @@ export function publicUser(u) {
   return {
     wallet: u.wallet,
     code: u.code,
-    points: u.points,
+    points: Math.round(Number(u.points) * 10) / 10,
     streak: u.streak,
     lastCheckinDate: u.last_checkin_date,
     createdAt: u.created_at

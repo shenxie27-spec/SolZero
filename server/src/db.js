@@ -58,6 +58,28 @@ export function openDb(dbPath = config.dbPath) {
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       UNIQUE(user_id, mint)
     );
+    CREATE TABLE IF NOT EXISTS cleanup_allowlist (
+      user_id INTEGER NOT NULL,
+      mint TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      UNIQUE(user_id, mint)
+    );
+    CREATE TABLE IF NOT EXISTS error_reports (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      context TEXT NOT NULL,
+      message TEXT NOT NULL,
+      stack TEXT,
+      wallet TEXT,
+      ip TEXT,
+      user_agent TEXT,
+      app_version TEXT,
+      platform TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_error_reports_created
+      ON error_reports(created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_error_reports_ip
+      ON error_reports(ip);
   `);
   for (const col of ['last_cleanup_date TEXT', 'last_task_date TEXT']) {
     try {

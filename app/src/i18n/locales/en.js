@@ -15,6 +15,7 @@ export default {
     agree: 'By logging in you agree to the Terms of Service and Privacy Policy',
     failed: 'Connection failed, please retry',
     networkError: 'Wallet connected, but the login server is unreachable. Check your network and try again.',
+    rejected: 'Wallet rejected the authorization request. Please retry and tap Allow.',
     walletTimeout: 'Cannot open Seed Vault. Please open the system wallet app first, then try again.',
     skip: 'Browse as guest',
     guestHint: 'Guest mode: connect a wallet to use cleanup'
@@ -51,7 +52,10 @@ export default {
     noEmpty: 'No empty or dust accounts found',
     lastUsed: 'Last used {{date}}', neverUsed: 'Never used',
     hiddenNote: '{{count}} tokens with a balance could not be priced and are hidden automatically to protect value',
+    allowlisted: 'Allowlisted token',
     blockedNote: '{{count}} token(s) blocked', block: 'Hide',
+    cnfUnsupported: 'New tree type · burn not supported yet',
+    accountsChanged: 'Account state changed, rescanned',
     noCnf: 'No compressed NFTs found',
     cnfFee: 'NFT burn fee (symbolic gas)',
     cnfFeeHint: '{{fee}} SOL symbolic fee per NFT, +{{points}} points each',
@@ -82,10 +86,11 @@ export default {
   points: {
     title: 'My Points', balance: 'Balance', history: 'History',
     noHistory: 'No points yet. Clean your wallet or check in!',
-    kindCheckin: 'Daily check-in', kindCleanup: 'Cleanup', kindReferralL1: 'Level-1 referral', kindReferralL2: 'Level-2 referral', kindAdjust: 'Adjustment',
+    kindCheckin: 'Daily check-in', kindCleanup: 'Cleanup', kindCnfBurn: 'NFT burn', kindTask: 'Daily task',
+    kindReferralL1: 'Level-1 referral', kindReferralL2: 'Level-2 referral', kindAdjust: 'Adjustment',
     moreWelfare: 'More member benefits coming soon',
     welfareHint: 'The more points you hold, the more member benefits you unlock. Keep going!',
-    leaderboard: 'Leaderboard', rank: 'Rank', me: 'Me'
+    leaderboard: 'Leaderboard', noLeaderboard: 'No one on the board yet', rank: 'Rank', me: 'Me'
   },
   invite: {
     title: 'Invite Friends', desc: 'When friends register with your code, you earn a bonus on their cleanup points',
@@ -97,9 +102,13 @@ export default {
   },
   profile: {
     title: 'Profile', wallet: 'Wallet', joined: 'Joined',
-    language: 'Language', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
+    language: 'Language', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어', langZhTW: '繁體中文',
     privacy: 'Privacy Policy', terms: 'Terms of Service',
     blockedTitle: 'Blocked tokens', blockedEmpty: 'No blocked tokens yet', unblock: 'Unblock',
+    allowlistTitle: 'Cleanup allowlist',
+    allowlistDesc: 'Enter a token CA to have its accounts selected and cleanable by default on scan (for tokens with no available price).',
+    allowlistPlaceholder: 'Enter token CA (mint address)',
+    allowlistAdd: 'Add', allowlistRemove: 'Remove', allowlistEmpty: 'No tokens added yet',
     feedbackTitle: 'Feedback email', feedbackDesc: 'For product feedback or issues, email us at:',
     deleteAccount: 'Delete account', deleteConfirm: 'This deletes all your data permanently. Continue?',
     deleted: 'Account deleted', version: 'Version'

@@ -15,6 +15,7 @@ export default {
     agree: '登录即代表同意《用户协议》与《隐私政策》',
     failed: '连接失败，请重试',
     networkError: '钱包已连接，但登录服务器不可用，请检查网络后重试',
+    rejected: '钱包拒绝了授权请求，请重试并在弹窗中点允许',
     walletTimeout: '无法拉起种子库钱包，请先打开系统钱包（Seed Vault）后再试一次',
     skip: '先逛逛（游客模式）',
     guestHint: '游客模式：未连接钱包，清理功能暂不可用'
@@ -51,7 +52,10 @@ export default {
     noEmpty: '没有发现空账户或粉尘代币',
     lastUsed: '最后使用 {{date}}', neverUsed: '从未使用',
     hiddenNote: '{{count}} 个有余额代币无法确认价值，已自动隐藏保护',
+    allowlisted: '白名单代币',
     blockedNote: '{{count}} 个代币已屏蔽', block: '屏蔽',
+    cnfUnsupported: '新树类型 · 暂不支持销毁',
+    accountsChanged: '账户状态已变化，已重新扫描',
     noCnf: '没有发现压缩 NFT',
     cnfFee: 'NFT 销毁费（象征性 gas）',
     cnfFeeHint: '每个 NFT 收取 {{fee}} SOL 象征性手续费，+{{points}} 积分',
@@ -82,10 +86,11 @@ export default {
   points: {
     title: '我的积分', balance: '当前积分', history: '积分明细',
     noHistory: '还没有积分记录，快去清理钱包或签到吧',
-    kindCheckin: '每日签到', kindCleanup: '清理回收', kindReferralL1: '一级伙伴奖励', kindReferralL2: '二级伙伴奖励', kindAdjust: '调整',
+    kindCheckin: '每日签到', kindCleanup: '清理回收', kindCnfBurn: 'NFT 销毁', kindTask: '每日任务',
+    kindReferralL1: '一级伙伴奖励', kindReferralL2: '二级伙伴奖励', kindAdjust: '调整',
     moreWelfare: '更多会员权益即将解锁',
     welfareHint: '积分越多，未来解锁的会员权益越多。继续积累吧！',
-    leaderboard: '积分排行', rank: '排名', me: '我'
+    leaderboard: '积分排行', noLeaderboard: '暂无上榜用户', rank: '排名', me: '我'
   },
   invite: {
     title: '邀请好友', desc: '好友通过你的邀请码注册，TA 每次清理获得的积分都会给你返点',
@@ -97,9 +102,13 @@ export default {
   },
   profile: {
     title: '我的', wallet: '钱包地址', joined: '注册时间',
-    language: '语言', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
+    language: '语言', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어', langZhTW: '繁體中文',
     privacy: '隐私政策', terms: '用户协议',
     blockedTitle: '已屏蔽代币', blockedEmpty: '还没有屏蔽任何代币', unblock: '移除屏蔽',
+    allowlistTitle: '默认清理名单',
+    allowlistDesc: '输入代币 CA，添加后扫描时该代币账户会默认勾选并可清理（适用于无法获取价格的代币）。',
+    allowlistPlaceholder: '输入代币 CA（Mint 地址）',
+    allowlistAdd: '添加', allowlistRemove: '移除', allowlistEmpty: '还没有添加代币',
     feedbackTitle: '反馈邮箱', feedbackDesc: '产品建议或问题反馈，请发送邮件到：',
     deleteAccount: '注销账号', deleteConfirm: '注销后将删除你的全部数据且不可恢复，确定继续吗？',
     deleted: '账号已注销', version: '版本'

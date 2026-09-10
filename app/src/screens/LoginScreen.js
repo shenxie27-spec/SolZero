@@ -5,6 +5,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import i18n from '../i18n';
 import { api, storeToken, storeWallet } from '../api';
+import { reportError } from '../errors';
+import { Buffer } from 'buffer';
 
 function withTimeout(promise, ms, message) {
   return Promise.race([
@@ -20,7 +22,8 @@ const LANGS = [
   { key: 'zh', label: '中文' },
   { key: 'en', label: 'English' },
   { key: 'ja', label: '日本語' },
-  { key: 'ko', label: '한국어' }
+  { key: 'ko', label: '한국어' },
+  { key: 'zhTW', label: '繁體中文' }
 ];
 
 function FadeReveal({ delay, children }) {
@@ -65,7 +68,7 @@ export default function LoginScreen({ onAuthed, onSkip }) {
       const wallet = walletAccount ? walletAccount.address : null;
       if (!wallet) throw new Error(t('login.failed'));
       const challenge = await api('/auth/challenge', { auth: false, method: 'POST', body: { wallet } });
-      const signatureBytes = await withTimeout(signMessages(new TextEncoder().encode(challenge.message)), 120000, t('login.walletTimeout'));
+      const signatureBytes = await withTimeout(signMessages(Buffer.from(challenge.message, 'utf8')), 120000, t('login.walletTimeout'));
       const signature = encodeSignature(signatureBytes);
       const auth = await api('/auth/verify', {
         auth: false,
@@ -76,9 +79,12 @@ export default function LoginScreen({ onAuthed, onSkip }) {
       await storeWallet(wallet);
       onAuthed(auth.token);
     } catch (err) {
+      reportError('login', err);
       const msg = (err && err.message) || '';
       if (/Network request failed|Failed to fetch|Load failed/i.test(msg)) {
         setError(t('login.networkError'));
+      } else if (/Failed requirement|CancellationException|denied|rejected/i.test(msg)) {
+        setError(t('login.rejected'));
       } else {
         setError(msg || t('login.failed'));
       }

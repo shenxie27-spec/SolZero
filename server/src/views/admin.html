@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SolZero 工作台</title>
+<style>
+  :root {
+    --bg: #0A1012; --card: #101B1E; --line: rgba(234,249,246,0.10);
+    --text: #EAF9F6; --dim: #96A6A8; --faint: #5F6E70;
+    --teal: #5FD8C8; --gold: #FFC94D; --red: #F08C8C;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; padding: 24px; }
+  .top { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #5FD8C8, #14F191); display: flex; align-items: center; justify-content: center; color: #06281C; font-weight: 900; font-size: 22px; }
+  h1 { font-size: 22px; letter-spacing: 1px; }
+  .sub { color: var(--faint); font-size: 12px; }
+  .spacer { flex: 1; }
+  button { background: var(--teal); color: #06281C; border: 0; border-radius: 10px; padding: 9px 18px; font-weight: 700; cursor: pointer; font-size: 13px; }
+  button.ghost { background: transparent; color: var(--dim); border: 1px solid var(--line); }
+  .updated { color: var(--faint); font-size: 12px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .kpi { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; }
+  .kpi .label { color: var(--dim); font-size: 12px; }
+  .kpi .value { font-size: 24px; font-weight: 800; margin-top: 4px; }
+  .kpi .value.teal { color: var(--teal); } .kpi .value.gold { color: var(--gold); } .kpi .value.red { color: var(--red); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .card h2 { font-size: 14px; color: var(--dim); margin-bottom: 12px; font-weight: 700; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; color: var(--faint); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px 8px; border-bottom: 1px solid rgba(234,249,246,0.05); color: var(--text); }
+  .mono { font-family: Consolas, monospace; font-size: 11.5px; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
+  .bar-label { width: 110px; color: var(--dim); font-size: 12px; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: rgba(234,249,246,0.06); border-radius: 6px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, #2FAE9C, #5FD8C8); }
+  .bar-val { width: 70px; color: var(--text); font-size: 12px; flex-shrink: 0; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 11px; background: rgba(95,216,200,0.12); color: var(--teal); }
+  .pill.red { background: rgba(240,140,140,0.12); color: var(--red); }
+  .pill.gold { background: rgba(255,201,77,0.12); color: var(--gold); }
+  .err-msg { max-width: 460px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .login-wrap { min-height: 90vh; display: flex; align-items: center; justify-content: center; }
+  .login-card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 32px; width: 360px; text-align: center; }
+  .login-card h1 { margin-bottom: 8px; }
+  input { width: 100%; margin: 18px 0 12px; background: rgba(234,249,246,0.05); border: 1px solid var(--line); color: var(--text); border-radius: 10px; padding: 12px 14px; font-size: 14px; outline: none; }
+  .err { color: var(--red); font-size: 12px; min-height: 16px; margin-top: 8px; }
+  .hidden { display: none; }
+  .refresh-note { color: var(--faint); font-size: 11px; margin-top: 20px; text-align: center; }
+</style>
+</head>
+<body>
+<div id="login" class="login-wrap">
+  <div class="login-card">
+    <div style="font-size:36px">🛡️</div>
+    <h1>SolZero 工作台</h1>
+    <div class="sub">请输入管理令牌进入</div>
+    <input id="token" type="password" placeholder="管理令牌">
+    <button onclick="login()">进入工作台</button>
+    <div class="err" id="loginErr"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top">
+    <div class="logo">S</div>
+    <div>
+      <h1>SolZero 工作台</h1>
+      <div class="sub">Solana 钱包清理 · 运营数据总览</div>
+    </div>
+    <div class="spacer"></div>
+    <span class="updated" id="updated"></span>
+    <button class="ghost" onclick="refresh()">刷新</button>
+    <button class="ghost" onclick="logout()">退出</button>
+  </div>
+
+  <div class="grid" id="kpis"></div>
+
+  <div class="cols">
+    <div>
+      <div class="card">
+        <h2>积分来源分布（累计）</h2>
+        <div id="kindBars"></div>
+      </div>
+      <div class="card">
+        <h2>签到连续天数分布</h2>
+        <div id="streakBars"></div>
+      </div>
+      <div class="card">
+        <h2>系统状态</h2>
+        <div id="systemInfo"></div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <h2>积分排行榜 Top 10</h2>
+        <table id="leaderboard"></table>
+      </div>
+      <div class="card">
+        <h2>邀请数据</h2>
+        <div id="inviteInfo"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>错误监控</h2>
+    <div id="errorStats" style="margin-bottom:10px"></div>
+    <table id="errorTable"></table>
+  </div>
+
+  <div class="card">
+    <h2>最近活动</h2>
+    <table id="activityTable"></table>
+  </div>
+
+  <div class="refresh-note">数据来自 api.solzero.top · 每 60 秒自动刷新 · 时间为北京时间</div>
+</div>
+
+<script>
+const TOKEN_KEY = 'solzero_admin_token';
+const KIND_NAMES = {
+  checkin: '每日签到', cleanup: '清理回收', task: '每日任务',
+  cnf_burn: 'NFT 销毁', referral_l1: '一级返点', referral_l2: '二级返点', adjust: '调整'
+};
+
+function token() { return localStorage.getItem(TOKEN_KEY) || ''; }
+
+async function api(path) {
+  const res = await fetch(path, { headers: { Authorization: 'Bearer ' + token() } });
+  if (res.status === 401) { logout(); throw new Error('unauthorized'); }
+  if (!res.ok) throw new Error('HTTP ' + res.status);
+  return res.json();
+}
+
+function fmtTime(s) {
+  if (!s) return '—';
+  return new Date(String(s).replace(' ', 'T') + 'Z').toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
+}
+
+function fmtNum(n) { return Number(n || 0).toLocaleString('zh-CN'); }
+function fmtSol(n) { return n === null || n === undefined ? '—' : Number(n).toFixed(4); }
+function shortWallet(w) { return w && w.length > 10 ? w.slice(0, 6) + '…' + w.slice(-4) : (w || '—'); }
+
+function bars(el, data) {
+  const max = Math.max(1, ...data.map(d => d.v));
+  el.innerHTML = data.map(d => `
+    <div class="bar-row">
+      <div class="bar-label">${d.k}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(d.v / max * 100).toFixed(1)}%"></div></div>
+      <div class="bar-val">${d.v}</div>
+    </div>`).join('') || '<div class="sub">暂无数据</div>';
+}
+
+function kindPill(kind) {
+  const cls = kind.includes('referral') ? 'gold' : (kind === 'cleanup' || kind === 'cnf_burn' ? '' : '');
+  return `<span class="pill ${cls}">${KIND_NAMES[kind] || kind}</span>`;
+}
+
+function login() {
+  const t = document.getElementById('token').value.trim();
+  if (!t) { document.getElementById('loginErr').textContent = '请输入令牌'; return; }
+  localStorage.setItem(TOKEN_KEY, t);
+  refresh().catch(() => {});
+}
+
+function logout() {
+  localStorage.removeItem(TOKEN_KEY);
+  document.getElementById('login').classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+}
+
+async function refresh() {
+  if (!token()) { logout(); return; }
+  try {
+    const d = await api('/api/admin/summary');
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    render(d);
+    document.getElementById('loginErr').textContent = '';
+  } catch (e) {
+    document.getElementById('loginErr').textContent = e.message === 'unauthorized' ? '令牌无效或已过期' : ('加载失败: ' + e.message);
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('login').classList.remove('hidden');
+  }
+}
+
+function render(d) {
+  document.getElementById('updated').textContent = '更新于 ' + fmtTime(d.at);
+
+  const kpi = (label, value, cls) => `<div class="kpi"><div class="label">${label}</div><div class="value ${cls}">${value}</div></div>`;
+  document.getElementById('kpis').innerHTML = [
+    kpi('注册用户', fmtNum(d.users.total), ''),
+    kpi('今日新增', fmtNum(d.users.today), 'teal'),
+    kpi('今日活跃', fmtNum(d.users.activeToday), 'teal'),
+    kpi('累计积分', fmtNum(d.points.total), 'gold'),
+    kpi('今日积分', fmtNum(d.points.today), 'gold'),
+    kpi('金库余额 SOL', fmtSol(d.treasury.balanceSol), 'teal'),
+    kpi('累计手续费 SOL', fmtSol(d.treasury.feeSolTotal), ''),
+    kpi('累计回收 SOL', fmtSol(d.treasury.recoveredSolTotal), ''),
+    kpi('今日错误', fmtNum(d.errors.today), d.errors.today > 0 ? 'red' : '')
+  ].join('');
+
+  const kinds = Object.entries(d.points.byKind.total).sort((a, b) => b[1] - a[1]);
+  bars(document.getElementById('kindBars'), kinds.map(([k, v]) => ({ k: KIND_NAMES[k] || k, v })));
+  bars(document.getElementById('streakBars'), [1, 2, 3, 4, 5, 6, 7].map(n => ({ k: n + ' 天', v: d.points.streakDist[String(n)] || 0 })));
+
+  document.getElementById('leaderboard').innerHTML = '<tr><th>#</th><th>钱包</th><th>积分</th><th>连续签到</th><th>注册</th></tr>' +
+    d.leaderboard.map((r, i) => `<tr><td>${i + 1}</td><td class="mono">${shortWallet(r.wallet)}</td><td style="color:var(--gold)">${fmtNum(r.points)}</td><td>${r.streak} 天</td><td>${String(r.createdAt).slice(0, 10)}</td></tr>`).join('');
+
+  document.getElementById('inviteInfo').innerHTML = `
+    <div style="display:flex;gap:18px;margin-bottom:10px;flex-wrap:wrap">
+      <div><span class="sub">一级伙伴 </span><b>${fmtNum(d.invite.l1Count)}</b></div>
+      <div><span class="sub">二级伙伴 </span><b>${fmtNum(d.invite.l2Count)}</b></div>
+      <div><span class="sub">累计返点 </span><b style="color:var(--gold)">${fmtNum(d.invite.bonusTotal)}</b></div>
+    </div>
+    <table><tr><th>邀请人</th><th>伙伴数</th></tr>` +
+    d.invite.topReferrers.map(r => `<tr><td class="mono">${shortWallet(r.wallet)}</td><td>${r.c}</td></tr>`).join('') + '</table>';
+
+  document.getElementById('errorStats').innerHTML = `
+    <span class="pill">累计错误 ${d.errors.total}</span>
+    <span class="pill red">今日 ${d.errors.today}</span>
+    ${d.errors.contexts.map(c => `<span class="pill">${c.context} ${c.c}</span>`).join(' ')}`;
+  document.getElementById('errorTable').innerHTML = '<tr><th>时间</th><th>模块</th><th>错误信息</th><th>钱包</th><th>版本</th></tr>' +
+    d.errors.recent.map(r => `<tr><td style="white-space:nowrap">${fmtTime(r.createdAt)}</td><td>${r.context}</td><td class="err-msg" title="${(r.message || '').replace(/"/g, '&quot;')}">${(r.message || '').slice(0, 90)}</td><td class="mono">${shortWallet(r.wallet)}</td><td>${r.appVersion || ''}</td></tr>`).join('');
+
+  const sys = d.system;
+  const uptime = Math.floor(sys.uptimeSec / 3600) + ' 小时 ' + Math.floor((sys.uptimeSec % 3600) / 60) + ' 分';
+  const disk = sys.disk ? `${(sys.disk.usedKb / 1048576).toFixed(1)} GB / ${(sys.disk.totalKb / 1048576).toFixed(1)} GB` : '—';
+  document.getElementById('systemInfo').innerHTML = `
+    <div class="bar-row"><div class="bar-label">运行时长</div><div class="bar-track"><div class="bar-fill" style="width:100%"></div></div><div class="bar-val">${uptime}</div></div>
+    <div class="bar-row"><div class="bar-label">内存占用</div><div class="bar-track"><div class="bar-fill" style="width:${(sys.memRssMb / sys.memTotalMb * 100).toFixed(1)}%"></div></div><div class="bar-val">${sys.memRssMb} / ${sys.memTotalMb} MB</div></div>
+    <div class="bar-row"><div class="bar-label">磁盘已用</div><div class="bar-track"><div class="bar-fill" style="width:${sys.disk ? (sys.disk.usedKb / sys.disk.totalKb * 100).toFixed(1) : 0}%"></div></div><div class="bar-val">${disk}</div></div>
+    <div class="bar-row"><div class="bar-label">RPC 延迟</div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100, (sys.rpcLatencyMs || 0) / 5)}%"></div></div><div class="bar-val">${sys.rpcLatencyMs === null ? '不可用' : sys.rpcLatencyMs + ' ms'}</div></div>
+    <div class="sub" style="margin-top:8px">Node ${sys.node} · 金库地址 <span class="mono">${d.treasury.address}</span></div>`;
+
+  document.getElementById('activityTable').innerHTML = '<tr><th>时间</th><th>用户</th><th>类型</th><th>数量</th><th>说明</th></tr>' +
+    d.activity.map(r => `<tr><td style="white-space:nowrap">${fmtTime(r.createdAt)}</td><td class="mono">${shortWallet(r.wallet)}</td><td>${kindPill(r.kind)}</td><td style="color:var(--gold)">+${r.amount}</td><td class="sub">${r.note || ''}</td></tr>`).join('');
+}
+
+if (token()) refresh().catch(() => {});
+setInterval(() => { if (token() && !document.getElementById('app').classList.contains('hidden')) refresh().catch(() => {}); }, 60000);
+</script>
+</body>
+</html>

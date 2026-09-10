@@ -25,6 +25,18 @@ function hashBytes(value) {
   return out;
 }
 
+export async function fetchCnfTreeVersion(connection, asset) {
+  try {
+    const tree = new PublicKey(asset.compression.tree);
+    const treeAuthority = PublicKey.findProgramAddressSync([tree.toBuffer()], BUBBLEGUM_PROGRAM_ID)[0];
+    const info = await connection.getAccountInfo(treeAuthority);
+    if (!info || !info.data || info.data.length < 91) return 'v1';
+    return info.data[90] === 1 ? 'v2' : 'v1';
+  } catch (err) {
+    return 'unknown';
+  }
+}
+
 export function buildCnfBurnInstruction({ owner, asset, proofData }) {
   const tree = new PublicKey(asset.compression.tree);
   const treeAuthority = PublicKey.findProgramAddressSync([tree.toBuffer()], BUBBLEGUM_PROGRAM_ID)[0];

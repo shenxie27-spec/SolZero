@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, ScrollView, Share } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { api } from '../api';
-import { shortWallet } from '../format';
+import { reportError } from '../errors';
+import { shortWallet, fmtPointsNum } from '../format';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Header from '../components/Header';
@@ -20,6 +21,7 @@ export default function InviteScreen() {
       const data = await api('/me');
       setMe(data);
     } catch (err) {
+      reportError('invite', err);
       setError(err.message);
     }
   }
@@ -77,7 +79,7 @@ export default function InviteScreen() {
       <Card style={{ marginTop: 16 }}>
         <View style={styles.earnedRow}>
           <Text style={styles.earnedLabel}>{t('invite.earned')}</Text>
-          <Text style={styles.earnedValue}>{me ? me.invites.earned : '—'}</Text>
+          <Text style={styles.earnedValue}>{me ? fmtPointsNum(me.invites.earned) : '—'}</Text>
         </View>
       </Card>
 
@@ -94,7 +96,7 @@ export default function InviteScreen() {
           {me.invites.l1.map((u) => (
             <View key={u.id} style={styles.row}>
               <Text style={styles.rowWallet}>{shortWallet(u.wallet)}</Text>
-              <Text style={styles.rowPoints}>{u.points}</Text>
+              <Text style={styles.rowPoints}>{fmtPointsNum(u.points)}</Text>
             </View>
           ))}
         </Card>
@@ -106,7 +108,7 @@ export default function InviteScreen() {
           {me.invites.l2.map((u) => (
             <View key={u.id} style={styles.row}>
               <Text style={styles.rowWallet}>{shortWallet(u.wallet)}</Text>
-              <Text style={styles.rowPoints}>{u.points}</Text>
+              <Text style={styles.rowPoints}>{fmtPointsNum(u.points)}</Text>
             </View>
           ))}
         </Card>

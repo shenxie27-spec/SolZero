@@ -3,12 +3,13 @@ import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { api } from '../api';
-import { buildCheckinTransaction, buildTaskTransaction } from '../../../core/src/index.js';
-import { simulateTransactions } from '../solana';
+import { reportError } from '../errors';
+import { buildCheckinTransaction, buildTaskTransaction, CHECKIN_PREFIX, TASK_PREFIX } from '../../../core/src/index.js';
+import { simulateTransactions, findRecentMemoSignature } from '../solana';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Header from '../components/Header';
-import { colors, radius } from '../theme';
+import { colors } from '../theme';
 
 export default function CheckinScreen({ onRefreshPoints }) {
   const { t } = useTranslation();
@@ -28,6 +29,7 @@ export default function CheckinScreen({ onRefreshPoints }) {
       const taskData = await api('/task/status');
       setTask(taskData);
     } catch (err) {
+      reportError('checkin.load', err);
       setError(err.message);
     }
   }
@@ -62,7 +64,11 @@ export default function CheckinScreen({ onRefreshPoints }) {
       if (onRefreshPoints) onRefreshPoints();
       await load();
     } catch (err) {
-      setError(err.message);
+      const recovered = await tryRecover(err, `${CHECKIN_PREFIX}${status ? status.date : ''}`, '/checkin/report', setLastAward);
+      if (!recovered) {
+        reportError('checkin', err);
+        setError(err.message);
+      }
     } finally {
       setBusy(false);
     }
@@ -94,10 +100,51 @@ export default function CheckinScreen({ onRefreshPoints }) {
       if (onRefreshPoints) onRefreshPoints();
       await load();
     } catch (err) {
-      setError(err.message);
+      const recovered = await tryRecover(err, `${TASK_PREFIX}${task ? task.date : ''}`, '/task/claim', setTaskAward);
+      if (!recovered) {
+        reportError('task.claim', err);
+        setError(err.message);
+      }
     } finally {
       setTaskBusy(false);
     }
+  }
+
+  async function tryRecover(err, expectedMemo, reportPath, setAward) {
+    const msg = String((err && err.message) || err || '');
+    const cancelled = /CancellationException|cancel/i.test(msg);
+    if (!cancelled || !account || !expectedMemo) return false;
+    try {
+      const sig = await findRecentMemoSignature(connection, account.address, expectedMemo);
+      if (!sig) return false;
+      let report = null;
+      for (let attempt = 0; attempt < 3 && !report; attempt += 1) {
+        try {
+          report = await api(reportPath, { method: 'POST', body: { signature: sig } });
+        } catch (e2) {
+          if (e2.status === 409) {
+            await finishRecovery(setAward, null);
+            return true;
+          }
+          if ((e2.status === 404 || e2.status === 502) && attempt < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 3500));
+          } else {
+            return false;
+          }
+        }
+      }
+      if (!report) return false;
+      await finishRecovery(setAward, report);
+      return true;
+    } catch (e3) {
+      return false;
+    }
+  }
+
+  async function finishRecovery(setAward, report) {
+    if (report) setAward(report);
+    if (onRefreshPoints) onRefreshPoints();
+    await load();
   }
 
   const streak = status ? status.streak : 0;

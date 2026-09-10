@@ -1,12 +1,22 @@
 import { Router } from 'express';
 import { requireAuth, handle } from '../middleware.js';
-import { taskStatus, claimTask, verifyTaskTx } from '../services/task.service.js';
+import { taskStatus, claimTask, verifyTaskTx, recoverTaskFromChain } from '../services/task.service.js';
+import { db } from '../db.js';
 import { utcDateString } from '../services/points.js';
 
 const router = Router();
 
-router.get('/task/status', requireAuth, handle((req, res) => {
-  res.json(taskStatus(req.user));
+router.get('/task/status', requireAuth, handle(async (req, res) => {
+  const status = taskStatus(req.user);
+  if (status.cleanupDone && !status.claimed) {
+    const recovered = await recoverTaskFromChain(req.user, status.date);
+    if (recovered && recovered.recovered) {
+      const freshUser = db.prepare('SELECT * FROM users WHERE id = ?').get(req.user.id);
+      const fresh = taskStatus(freshUser);
+      return res.json({ ...fresh, recovered: true, awarded: recovered.awarded });
+    }
+  }
+  res.json(status);
 }));
 
 router.post('/task/claim', requireAuth, handle(async (req, res) => {

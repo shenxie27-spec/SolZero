@@ -8,6 +8,7 @@ import { API_URL, CHAIN, APP_NAME } from './src/config';
 import { getStoredToken, clearStoredToken, getStoredWallet, clearStoredWallet, storeWallet, api } from './src/api';
 import { useTranslation } from 'react-i18next';
 import { colors } from './src/theme';
+import { initGlobalErrorHandler } from './src/errors';
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import CheckinScreen from './src/screens/CheckinScreen';
@@ -15,6 +16,8 @@ import PointsScreen from './src/screens/PointsScreen';
 import InviteScreen from './src/screens/InviteScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import TabBar from './src/components/TabBar';
+
+initGlobalErrorHandler();
 
 function MainShell({ onLogout, guest }) {
   const { t } = useTranslation();

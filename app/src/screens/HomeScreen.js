@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Pressable, StyleSheet, Modal, ScrollView, Image } from 'react-native';
+import { View, Text, Pressable, StyleSheet, Modal, ScrollView, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useMobileWallet } from '@wallet-ui/react-native-web3js';
 import { api, getSolPrice } from '../api';
+import { reportError } from '../errors';
 import { scanWallet, buildCleanup, estimatePoints, fetchTokenMeta, simulateTransactions, fetchCnfAssets, fetchCnfProof } from '../solana';
-import { buildCnfBurnInstruction, buildCnfBurnTransactions, CNF_BURN_FEE_LAMPORTS, CNF_BURN_POINTS } from '../../../core/src/index.js';
+import { buildCnfBurnInstruction, buildCnfBurnTransactions, fetchCnfTreeVersion, CNF_BURN_FEE_LAMPORTS, CNF_BURN_POINTS } from '../../../core/src/index.js';
 import { fmtSol, fmtUsd, fmtAmount, shortWallet, fmtAddress } from '../format';
 import Button from '../components/Button';
 import Card from '../components/Card';
@@ -52,8 +53,8 @@ export default function HomeScreen({ onRefreshPoints }) {
   const [meta, setMeta] = useState({});
   const [lastUsed, setLastUsed] = useState({});
   const [blocked, setBlocked] = useState(new Set());
+  const [cleanable, setCleanable] = useState(new Set());
   const [selected, setSelected] = useState(new Set());
-  const [skippedSelected, setSkippedSelected] = useState(new Set());
   const [activeTab, setActiveTab] = useState('tokens');
   const [scanning, setScanning] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -64,10 +65,12 @@ export default function HomeScreen({ onRefreshPoints }) {
   const [cnfAssets, setCnfAssets] = useState([]);
   const [cnfSelected, setCnfSelected] = useState(new Set());
   const [cnfLoading, setCnfLoading] = useState(false);
+  const [cnfVersions, setCnfVersions] = useState({});
 
   useEffect(() => {
     getSolPrice().then(setSolUsd);
     api('/me/blocked').then((r) => setBlocked(new Set(r.mints || []))).catch(() => {});
+    api('/me/cleanable').then((r) => setCleanable(new Set(r.mints || []))).catch(() => {});
   }, []);
 
   async function handleScan() {
@@ -81,11 +84,14 @@ export default function HomeScreen({ onRefreshPoints }) {
       setResult(null);
       const data = await scanWallet(connection, account.address);
       setScan(data);
-      setSelected(new Set([...data.empty, ...data.dust].map((i) => i.pubkey)));
-      setSkippedSelected(new Set());
+      const whitelistedUnknown = (data.unknown || []).filter((i) => cleanable.has(i.mint));
+      setSelected(new Set([...data.empty, ...data.dust, ...whitelistedUnknown]
+        .filter((i) => !blocked.has(i.mint))
+        .map((i) => i.pubkey)));
       setActiveTab('tokens');
       setLastUsed({});
       api('/me/blocked').then((r) => setBlocked(new Set(r.mints || []))).catch(() => {});
+      api('/me/cleanable').then((r) => setCleanable(new Set(r.mints || []))).catch(() => {});
       const mints = [...data.empty, ...data.dust, ...(data.unknown || [])].map((i) => i.mint);
       fetchTokenMeta(mints).then(setMeta).catch(() => {});
       const pubs = [...data.empty, ...data.dust, ...(data.unknown || [])].map((i) => i.pubkey);
@@ -100,29 +106,48 @@ export default function HomeScreen({ onRefreshPoints }) {
         .then((list) => {
           setCnfAssets(list);
           setCnfSelected(new Set());
+          setCnfVersions({});
+          Promise.all(list.map(async (a) => {
+            try {
+              const v = await fetchCnfTreeVersion(connection, a);
+              return [a.id, v];
+            } catch (err) {
+              return [a.id, 'unknown'];
+            }
+          })).then((pairs) => {
+            const map = {};
+            for (const [id, v] of pairs) map[id] = v;
+            setCnfVersions(map);
+          }).catch(() => {});
         })
         .catch(() => {})
         .finally(() => setCnfLoading(false));
     } catch (err) {
+      reportError('home.scan', err);
       setError(err.message);
     } finally {
       setScanning(false);
     }
   }
 
-  const items = scan ? [...scan.empty, ...scan.dust].filter((i) => !blocked.has(i.mint)) : [];
-  const unpriced = scan && scan.unknown ? scan.unknown : [];
-  const blockedInScan = scan ? [...scan.empty, ...scan.dust, ...unpriced].filter((i) => blocked.has(i.mint)).length : 0;
+  const whitelistedUnknown = scan
+    ? (scan.unknown || []).filter((i) => cleanable.has(i.mint) && !blocked.has(i.mint))
+    : [];
+  const items = scan
+    ? [...scan.empty, ...scan.dust, ...whitelistedUnknown].filter((i) => !blocked.has(i.mint))
+    : [];
+  const unpriced = scan ? (scan.unknown || []).filter((i) => !cleanable.has(i.mint)) : [];
+  const blockedInScan = scan
+    ? [...scan.empty, ...scan.dust, ...(scan.unknown || [])].filter((i) => blocked.has(i.mint)).length
+    : 0;
   const hiddenTotal = unpriced.length + blockedInScan;
-  const skipped = [];
   const selectedItems = items.filter((i) => selected.has(i.pubkey));
-  const selectedSkipped = skipped.filter((i) => skippedSelected.has(i.pubkey));
   const selectedCnf = cnfAssets.filter((a) => cnfSelected.has(a.id));
-  const allSelected = [...selectedItems, ...selectedSkipped];
+  const allSelected = [...selectedItems];
   const recoveredLamports = allSelected.reduce((sum, i) => sum + Number(i.lamports), 0);
   const feeLamports = Math.floor(recoveredLamports * 0.1);
   const cnfFeeLamports = selectedCnf.length * CNF_BURN_FEE_LAMPORTS;
-  const netLamports = recoveredLamports - feeLamports - cnfFeeLamports;
+  const netLamports = Math.max(0, recoveredLamports - feeLamports - cnfFeeLamports);
   const basePoints = solUsd ? estimatePoints(recoveredLamports, solUsd) : 0;
   const estPoints = basePoints + selectedCnf.length * CNF_BURN_POINTS;
 
@@ -138,26 +163,20 @@ export default function HomeScreen({ onRefreshPoints }) {
     const allPicked = leftKeys.length > 0 && leftKeys.every((k) => selected.has(k));
     if (allPicked) {
       setSelected(new Set());
-      setSkippedSelected(new Set());
     } else {
       setSelected(new Set(items.map((i) => i.pubkey)));
-      setSkippedSelected(new Set());
     }
   }
 
   function toggleAllCnf() {
-    if (cnfSelected.size === cnfAssets.length) setCnfSelected(new Set());
-    else setCnfSelected(new Set(cnfAssets.map((a) => a.id)));
-  }
-
-  function toggleSkipped(pubkey) {
-    const next = new Set(skippedSelected);
-    if (next.has(pubkey)) next.delete(pubkey);
-    else next.add(pubkey);
-    setSkippedSelected(next);
+    const supported = cnfAssets.filter((a) => cnfVersions[a.id] !== 'v2');
+    const allPicked = supported.length > 0 && supported.every((a) => cnfSelected.has(a.id));
+    if (allPicked) setCnfSelected(new Set());
+    else setCnfSelected(new Set(supported.map((a) => a.id)));
   }
 
   function toggleCnf(id) {
+    if (cnfVersions[id] === 'v2') return;
     const next = new Set(cnfSelected);
     if (next.has(id)) next.delete(id);
     else next.add(id);
@@ -169,7 +188,7 @@ export default function HomeScreen({ onRefreshPoints }) {
     next.add(mint);
     setBlocked(next);
     const pubkeys = scan
-      ? [...scan.empty, ...scan.dust].filter((i) => i.mint === mint).map((i) => i.pubkey)
+      ? [...scan.empty, ...scan.dust, ...(scan.unknown || [])].filter((i) => i.mint === mint).map((i) => i.pubkey)
       : [];
     setSelected((prev) => {
       const n = new Set(prev);
@@ -219,7 +238,8 @@ export default function HomeScreen({ onRefreshPoints }) {
         : { transactions: [], breakdown: null };
 
       const cnfInstructions = [];
-      for (const asset of selectedCnf) {
+      const burnableCnf = selectedCnf.filter((a) => cnfVersions[a.id] !== 'v2');
+      for (const asset of burnableCnf) {
         try {
           const proofData = await fetchCnfProof(asset.id);
           cnfInstructions.push(buildCnfBurnInstruction({ owner: account.address, asset, proofData }));
@@ -254,7 +274,14 @@ export default function HomeScreen({ onRefreshPoints }) {
       if (onRefreshPoints) onRefreshPoints();
       handleScan();
     } catch (err) {
-      setError(err.message || t('home.failed'));
+      const msg = String((err && err.message) || err || '');
+      if (/AccountNotFound|not found/i.test(msg)) {
+        setError(t('home.accountsChanged'));
+        setTimeout(() => handleScan(), 1500);
+      } else {
+        setError(msg || t('home.failed'));
+      }
+      reportError('home.cleanup', err);
     } finally {
       setBusy(false);
     }
@@ -349,6 +376,7 @@ export default function HomeScreen({ onRefreshPoints }) {
                 items.map((item) => {
                   const isSelected = selected.has(item.pubkey);
                   const isDust = item.kind === 'dust';
+                  const isAllowlisted = item.kind === 'unknown';
                   const m = meta[item.mint] || null;
                   const symbol = m && m.symbol ? m.symbol : null;
                   const lu = fmtLastUsed(lastUsed[item.pubkey]);
@@ -359,7 +387,7 @@ export default function HomeScreen({ onRefreshPoints }) {
                       <View style={{ flex: 1 }}>
                         <Text style={styles.columnItemTitle} numberOfLines={1}>{symbol || t('home.unknownToken')}</Text>
                         <Text style={styles.columnItemSub} numberOfLines={1}>
-                          {isDust ? t('home.dustTitle') : t('home.emptyTitle')} · +{fmtSol(item.lamports)} SOL · {lu ? t('home.lastUsed', { date: lu }) : t('home.neverUsed')}
+                          {isAllowlisted ? t('home.allowlisted') : (isDust ? t('home.dustTitle') : t('home.emptyTitle'))} · +{fmtSol(item.lamports)} SOL · {lu ? t('home.lastUsed', { date: lu }) : t('home.neverUsed')}
                         </Text>
                       </View>
                       <Pressable style={styles.hideBtn} onPress={() => blockMint(item.mint)}>
@@ -376,7 +404,7 @@ export default function HomeScreen({ onRefreshPoints }) {
                 <Text style={styles.sectionTitle}>{t('home.cnfTitle')}</Text>
                 <Pressable onPress={toggleAllCnf}>
                   <Text style={styles.selectAll}>
-                    {cnfAssets.length > 0 && cnfSelected.size === cnfAssets.length ? t('home.clearAll') : t('home.selectAll')}
+                    {cnfAssets.filter((a) => cnfVersions[a.id] !== 'v2').length > 0 && cnfAssets.filter((a) => cnfVersions[a.id] !== 'v2').every((a) => cnfSelected.has(a.id)) ? t('home.clearAll') : t('home.selectAll')}
                   </Text>
                 </Pressable>
               </View>
@@ -384,15 +412,18 @@ export default function HomeScreen({ onRefreshPoints }) {
               {cnfAssets.length > 0 ? (
                 cnfAssets.map((asset) => {
                   const isSel = cnfSelected.has(asset.id);
+                  const unsupported = cnfVersions[asset.id] === 'v2';
                   const name = (asset.content && asset.content.metadata && asset.content.metadata.name) || shortWallet(asset.id);
                   const img = (asset.content && asset.content.links && asset.content.links.image) || null;
                   return (
-                    <Pressable key={asset.id} style={[styles.columnItem, isSel && styles.itemSelected]} onPress={() => toggleCnf(asset.id)}>
-                      <View style={[styles.checkSm, isSel && styles.checkOn]}>{isSel ? <Text style={styles.checkMark}>✓</Text> : null}</View>
+                    <Pressable key={asset.id} style={[styles.columnItem, isSel && styles.itemSelected, unsupported && styles.itemUnsupported]} onPress={() => toggleCnf(asset.id)}>
+                      <View style={[styles.checkSm, isSel && styles.checkOn, unsupported && styles.checkDisabled]}>{isSel ? <Text style={styles.checkMark}>✓</Text> : null}</View>
                       <CnfIcon uri={img} size={30} />
                       <View style={{ flex: 1 }}>
                         <Text style={styles.columnItemTitle} numberOfLines={1}>{name}</Text>
-                        <Text style={styles.columnItemSub} numberOfLines={1}>{t('home.cnfBurnTag')} · {shortWallet(asset.id)}</Text>
+                        <Text style={styles.columnItemSub} numberOfLines={1}>
+                          {t('home.cnfBurnTag')} · {shortWallet(asset.id)}{unsupported ? ' · ' + t('home.cnfUnsupported') : ''}
+                        </Text>
                       </View>
                     </Pressable>
                   );
@@ -611,6 +642,8 @@ const styles = StyleSheet.create({
   },
   columnItemTitle: { color: colors.text, fontSize: 13, fontWeight: '700' },
   columnItemSub: { color: colors.textFaint, fontSize: 10, marginTop: 2 },
+  itemUnsupported: { opacity: 0.45 },
+  checkDisabled: { borderColor: 'rgba(234,249,246,0.15)' },
   hiddenNote: {
     backgroundColor: 'rgba(255,201,77,0.07)',
     borderWidth: 1,

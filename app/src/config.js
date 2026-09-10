@@ -4,4 +4,5 @@ export const USE_LOCAL_API = false;
 export const API_URL = USE_LOCAL_API ? 'http://127.0.0.1:8787' : (__DEV__ ? 'http://10.0.2.2:8787' : 'https://api.solzero.top');
 export const CHAIN = 'solana:mainnet-beta';
 export const APP_NAME = 'SolZero';
+export const APP_VERSION = '1.1.4';
 export const TREASURY = 'B5FhC46zHEcurfhy7mn88jyq7GvTS73qpZ2R9aUVcKJe';

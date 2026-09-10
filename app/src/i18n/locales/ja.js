@@ -15,6 +15,7 @@ export default {
     agree: 'ログインすると利用規約とプライバシーポリシーに同意したものとみなされます',
     failed: '接続に失敗しました。もう一度お試しください',
     networkError: 'ウォレットは接続されましたが、ログインサーバーに接続できません。ネットワークを確認して再試行してください',
+    rejected: 'ウォレットが認証要求を拒否しました。再試行して許可してください',
     walletTimeout: 'Seed Vault を起動できません。先にシステムウォレットを開いてから再試行してください',
     skip: 'ゲストとして見て回る',
     guestHint: 'ゲストモード：ウォレット未接続のため、クリーンアップはご利用いただけません'
@@ -51,7 +52,10 @@ export default {
     noEmpty: '空アカウント・ダストトークンは見つかりませんでした',
     lastUsed: '最終使用 {{date}}', neverUsed: '未使用',
     hiddenNote: '価格を確認できない残高ありのトークン{{count}}件は、価値を守るため自動で非表示にしています',
+    allowlisted: '許可リストのトークン',
     blockedNote: '{{count}}件のトークンをブロック中', block: 'ブロック',
+    cnfUnsupported: '新ツリータイプ・バーン非対応',
+    accountsChanged: 'アカウント状態が変わったため再スキャンしました',
     noCnf: '圧縮NFTは見つかりませんでした',
     cnfFee: 'NFTバーン手数料（象徴的ガス代）',
     cnfFeeHint: '1NFTにつき{{fee}} SOLの象徴的手数料、+{{points}}ポイント',
@@ -82,10 +86,11 @@ export default {
   points: {
     title: 'マイポイント', balance: '残高', history: '履歴',
     noHistory: 'まだポイントがありません。整理かチェックインをしましょう',
-    kindCheckin: '毎日チェックイン', kindCleanup: '整理回収', kindReferralL1: '1 次パートナー報酬', kindReferralL2: '2 次パートナー報酬', kindAdjust: '調整',
+    kindCheckin: '毎日チェックイン', kindCleanup: '整理回収', kindCnfBurn: 'NFT焼却', kindTask: 'デイリータスク',
+    kindReferralL1: '1 次パートナー報酬', kindReferralL2: '2 次パートナー報酬', kindAdjust: '調整',
     moreWelfare: 'さらなる会員特典は近日公開',
     welfareHint: 'ポイントが多いほど、今後アンロックされる会員特典が増えます。続けましょう！',
-    leaderboard: 'ランキング', rank: '順位', me: '自分'
+    leaderboard: 'ランキング', noLeaderboard: 'ランキングにまだユーザーがいません', rank: '順位', me: '自分'
   },
   invite: {
     title: '友達を招待', desc: '友達があなたのコードで登録すると、その整理ポイントに応じてボーナスがもらえます',
@@ -97,9 +102,13 @@ export default {
   },
   profile: {
     title: 'プロフィール', wallet: 'ウォレット', joined: '登録日',
-    language: '言語', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어',
+    language: '言語', langZh: '简体中文', langEn: 'English', langJa: '日本語', langKo: '한국어', langZhTW: '繁體中文',
     privacy: 'プライバシーポリシー', terms: '利用規約',
     blockedTitle: 'ブロックしたトークン', blockedEmpty: 'ブロックしたトークンはありません', unblock: '解除',
+    allowlistTitle: 'デフォルト整理リスト',
+    allowlistDesc: 'トークンCAを入力すると、スキャン時にそのトークンアカウントがデフォルトで選択され整理可能になります（価格を取得できないトークン向け）。',
+    allowlistPlaceholder: 'トークンCA（Mintアドレス）を入力',
+    allowlistAdd: '追加', allowlistRemove: '削除', allowlistEmpty: '追加されたトークンはありません',
     feedbackTitle: 'フィードバックメール', feedbackDesc: 'ご意見・不具合はこちらのメールまで：',
     deleteAccount: 'アカウント削除', deleteConfirm: 'すべてのデータが完全に削除されます。続行しますか？',
     deleted: 'アカウントを削除しました', version: 'バージョン'
